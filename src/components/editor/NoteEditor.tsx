@@ -5,13 +5,14 @@
 
 "use client";
 
-import { Eye, Code, Columns2, Rows2, X, Download } from "lucide-react";
+import { Eye, Code, Columns2, Rows2, X, Download, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { EditorMode } from "@/lib/vault/types";
 import { useVaultStore } from "@/lib/vault/vault-store";
 import { downloadNoteAsHtml } from "@/lib/export";
 import { WysiwygEditor } from "./WysiwygEditor";
 import { SourceEditor } from "./SourceEditor";
+import { ReadingView } from "./ReadingView";
 
 interface NoteEditorProps {
   paneId: string;
@@ -60,7 +61,7 @@ export function NoteEditor({ paneId, fileId, content, frontmatter = {}, isActive
         </button>
         <button
           type="button"
-          title="Source mode (Ctrl+E)"
+          title="Source mode"
           onClick={() => setPaneEditorMode(paneId, "source")}
           className={cn(
             "flex h-6 items-center gap-1 rounded px-2 text-[11px] transition-colors",
@@ -71,6 +72,20 @@ export function NoteEditor({ paneId, fileId, content, frontmatter = {}, isActive
         >
           <Code size={12} />
           Source
+        </button>
+        <button
+          type="button"
+          title="Reading mode"
+          onClick={() => setPaneEditorMode(paneId, "reading")}
+          className={cn(
+            "flex h-6 items-center gap-1 rounded px-2 text-[11px] transition-colors",
+            editorMode === "reading"
+              ? "bg-obs-accent/20 text-obs-accent"
+              : "text-obs-text-muted hover:text-obs-text"
+          )}
+        >
+          <BookOpen size={12} />
+          Reading
         </button>
 
         <div className="flex-1" />
@@ -121,10 +136,14 @@ export function NoteEditor({ paneId, fileId, content, frontmatter = {}, isActive
       </div>
 
       <div className="flex-1 overflow-hidden">
-        {editorMode === "live" ? (
+        {editorMode === "live" && (
           <WysiwygEditor fileId={fileId} content={content} hideToolbar />
-        ) : (
+        )}
+        {editorMode === "source" && (
           <SourceEditor fileId={fileId} content={content} frontmatter={frontmatter} />
+        )}
+        {editorMode === "reading" && (
+          <ReadingView fileId={fileId} content={content} />
         )}
       </div>
     </div>

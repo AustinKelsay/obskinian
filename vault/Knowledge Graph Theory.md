@@ -24,4 +24,14 @@ Related notes form **clusters** — visible in [[Graph View]] as tightly connect
 
 See also: [[MOC - Knowledge Management]]
 
+## Graph Metrics
+
+| Metric | Formula | Meaning |
+| --- | --- | --- |
+| Degree | $k_i$ | Links per note |
+| Clustering | $C = \frac{2E}{k(k-1)}$ | Local density |
+| Path length | $d(i,j)$ | Steps between notes |
+
+The small-world property suggests $d(i,j) \propto \log N$ for large vaults.
+
 #theory #zettelkasten #knowledge-management

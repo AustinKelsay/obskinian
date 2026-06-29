@@ -27,6 +27,7 @@ import { openDailyNote } from "@/lib/plugins/daily-notes";
 import { loadPreferences, applyCustomCss } from "@/lib/preferences";
 import { applyTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+import { cycleEditorMode } from "@/lib/markdown/pipeline";
 
 /** Root layout shell matching Obsidian's workspace structure */
 export function AppShell() {
@@ -69,7 +70,8 @@ export function AppShell() {
       onCommandPalette: () => setCommandPaletteOpen(true),
       onToggleSource: () => {
         const pane = paneList.find((p) => p.id === activePaneId);
-        setPaneEditorMode(activePaneId, pane?.editorMode === "source" ? "live" : "source");
+        const next = cycleEditorMode(pane?.editorMode ?? "live");
+        setPaneEditorMode(activePaneId, next);
       },
       onCloseTab: () => {
         if (activeTabId) closeTab(activeTabId);

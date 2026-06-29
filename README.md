@@ -31,7 +31,7 @@ A **skin-deep front-end clone** of [Obsidian](https://obsidian.md) — built as 
 | Shortcut | Action |
 |---|---|
 | `⌘P` / `Ctrl+P` | Command palette |
-| `⌘E` / `Ctrl+E` | Toggle live / source mode |
+| `⌘E` / `Ctrl+E` | Cycle live / source / reading mode |
 | `⌘N` / `Ctrl+N` | Create new note |
 | `⌘W` / `Ctrl+W` | Close active tab |
 | `⌘G` / `Ctrl+G` | Open graph view |
@@ -86,6 +86,12 @@ A **skin-deep front-end clone** of [Obsidian](https://obsidian.md) — built as 
 - **Mermaid diagrams** — ` ```mermaid ` code blocks render as SVG diagrams
 - **Syntax highlighting** — fenced code blocks highlighted via highlight.js
 - **Promote unlinked mentions** — convert plain-text mentions to `[[wiki-links]]` from backlinks panel
+
+### Phase 10
+- **Reading mode** — read-only rendered view with full Obsidian syntax support
+- **Unified markdown pipeline** — remark/rehype with GFM tables and LaTeX math (KaTeX)
+- **Editor mode cycle** — `⌘E` / toolbar cycles Live → Source → Reading
+- **TipTap headings H4–H6** — extended heading support in live editor
 
 ## Getting Started
 

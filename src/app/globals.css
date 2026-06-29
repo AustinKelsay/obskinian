@@ -5,6 +5,7 @@
 
 @import "tailwindcss";
 @import "highlight.js/styles/atom-one-dark.css";
+@import "katex/dist/katex.min.css";
 
 @theme inline {
   --color-obs-bg: #1e1e1e;
@@ -336,6 +337,30 @@ body {
   background: transparent;
   border: none;
   padding: 0;
+}
+
+.reading-view table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.9em;
+}
+
+.reading-view th,
+.reading-view td {
+  border: 1px solid var(--color-obs-border);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+
+.reading-view th {
+  background: var(--color-obs-bg-secondary);
+  font-weight: 600;
+}
+
+.reading-view .katex-display {
+  margin: 1em 0;
+  overflow-x: auto;
 }
 
 .graph-container canvas {

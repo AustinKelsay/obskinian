@@ -91,8 +91,8 @@ export interface BacklinkEntry {
 /** Application view mode */
 export type ViewMode = "editor" | "graph";
 
-/** Editor display mode — WYSIWYG or raw markdown source */
-export type EditorMode = "live" | "source";
+/** Editor display mode — WYSIWYG, raw source, or read-only rendered preview */
+export type EditorMode = "live" | "source" | "reading";
 
 /** Split pane layout direction */
 export type SplitDirection = "none" | "vertical" | "horizontal";

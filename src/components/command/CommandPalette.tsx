@@ -28,6 +28,7 @@ import { openDailyNote } from "@/lib/plugins/daily-notes";
 import { pluginRegistry } from "@/lib/plugins/registry";
 import { useVaultStore } from "@/lib/vault/vault-store";
 import { getFileDisplayName } from "@/lib/utils";
+import { cycleEditorMode } from "@/lib/markdown/pipeline";
 import { downloadNoteAsHtml } from "@/lib/export";
 import type { VaultFile } from "@/lib/vault/types";
 
@@ -91,10 +92,13 @@ export function CommandPalette() {
       { id: "split-h", label: "Split pane horizontally", group: "Pane", icon: Zap, action: () => splitPane("horizontal") },
       {
         id: "toggle-source",
-        label: activePane?.editorMode === "source" ? "Switch to live preview" : "Switch to source mode",
+        label: "Cycle editor mode (live / source / reading)",
         group: "Editor",
         icon: Code,
-        action: () => setPaneEditorMode(activePaneId, activePane?.editorMode === "source" ? "live" : "source"),
+        action: () => {
+          const pane = panes.find((p) => p.id === activePaneId);
+          setPaneEditorMode(activePaneId, cycleEditorMode(pane?.editorMode ?? "live"));
+        },
       },
       ...(activeFile
         ? [

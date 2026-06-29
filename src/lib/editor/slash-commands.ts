@@ -32,6 +32,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { id: "callout", label: "Callout", description: "Obsidian callout block", markdown: "> [!note] Title\n> ", tiptapAction: "callout" },
   { id: "blockid", label: "Block ID", description: "Add block reference anchor", markdown: " ^block-id", tiptapAction: "blockId" },
   { id: "mermaid", label: "Mermaid diagram", description: "Flowchart or diagram", markdown: "```mermaid\ngraph TD\n  A --> B\n```", tiptapAction: "mermaid" },
+  { id: "table", label: "Table", description: "GFM markdown table", markdown: "| Col A | Col B |\n| --- | --- |\n| | |\n", tiptapAction: "table" },
 ];
 
 /** Filters slash commands by query string */
@@ -109,6 +110,9 @@ export function applyTiptapSlashCommand(editor: Editor, cmd: SlashCommand): void
       break;
     case "mermaid":
       chain.insertContent("```mermaid\ngraph TD\n  A --> B\n```").run();
+      break;
+    case "table":
+      chain.insertContent("| Col A | Col B |\n| --- | --- |\n| | |\n").run();
       break;
     default:
       break;

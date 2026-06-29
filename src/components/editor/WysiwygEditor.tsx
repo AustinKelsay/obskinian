@@ -114,7 +114,7 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
+        heading: { levels: [1, 2, 3, 4, 5, 6] },
       }),
       Underline,
       Link.configure({ openOnClick: false }),
