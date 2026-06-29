@@ -38,7 +38,12 @@ A **skin-deep front-end clone** of [Obsidian](https://obsidian.md) — built as 
 | `⌘⇧F` / `Ctrl+Shift+F` | Open search |
 | `⌘D` / `Ctrl+D` | Open today's daily note (via command palette) |
 
-### Phase 3
+### Phase 4
+- **Light/dark themes** with 5 accent color options (Settings → Appearance)
+- **Inline rename** — double-click or pencil icon on files/folders
+- **Drag-and-drop** — drag notes onto folders to move them
+- **Outline navigation** — click headings in right sidebar to scroll
+- **Plugin commands** — registered plugin commands appear in palette
 - **Settings panel** — daily notes, recent files, plugin list
 - **Fuzzy command palette** — smarter search with grouped results
 - **Recent files** — shown in command palette when empty

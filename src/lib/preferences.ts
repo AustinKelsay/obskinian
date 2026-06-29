@@ -8,6 +8,8 @@ export interface UserPreferences {
   dailyNotesFolder: string;
   openDailyNoteOnStartup: boolean;
   showRecentInPalette: boolean;
+  theme: import("./theme").ThemeMode;
+  accent: import("./theme").AccentColor;
 }
 
 const STORAGE_KEY = "obskinian-preferences";
@@ -17,6 +19,8 @@ const DEFAULTS: UserPreferences = {
   dailyNotesFolder: "Daily Notes",
   openDailyNoteOnStartup: false,
   showRecentInPalette: true,
+  theme: "dark",
+  accent: "purple",
 };
 
 /** Loads preferences from localStorage */
@@ -31,11 +35,18 @@ export function loadPreferences(): UserPreferences {
   }
 }
 
-/** Saves preferences to localStorage */
+/** Saves preferences to localStorage and applies theme if changed */
 export function savePreferences(prefs: Partial<UserPreferences>): UserPreferences {
   const current = loadPreferences();
   const next = { ...current, ...prefs };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+
+  if (prefs.theme !== undefined || prefs.accent !== undefined) {
+    import("./theme").then(({ applyTheme }) => {
+      applyTheme({ mode: next.theme, accent: next.accent });
+    });
+  }
+
   return next;
 }
 

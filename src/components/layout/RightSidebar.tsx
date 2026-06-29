@@ -23,6 +23,7 @@ export function RightSidebar() {
     openFile,
     setLeftPanel,
     setSearchQuery,
+    scrollToHeading,
   } = useVaultStore();
 
   const activeFile = getActiveFile();
@@ -83,13 +84,15 @@ export function RightSidebar() {
               <p className="px-3 py-4 text-[13px] text-obs-text-faint">No note open.</p>
             )}
             {headings.map((h) => (
-              <div
+              <button
                 key={h.id}
-                className="cursor-pointer truncate px-3 py-[3px] text-[13px] text-obs-text-muted transition-colors hover:bg-obs-interactive-hover hover:text-obs-text"
+                type="button"
+                onClick={() => scrollToHeading(h.id)}
+                className="flex w-full cursor-pointer truncate px-3 py-[3px] text-left text-[13px] text-obs-text-muted transition-colors hover:bg-obs-interactive-hover hover:text-obs-text"
                 style={{ paddingLeft: `${(h.level - 1) * 12 + 12}px` }}
               >
                 {h.text}
-              </div>
+              </button>
             ))}
             {activeFile && headings.length === 0 && (
               <p className="px-3 py-4 text-[13px] text-obs-text-faint">No headings found.</p>

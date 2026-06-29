@@ -70,6 +70,8 @@ function ToolbarButton({ onClick, isActive, title, children }: ToolbarButtonProp
 export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygEditorProps) {
   const updateContent = useVaultStore((s) => s.updateContent);
   const openFileByLink = useVaultStore((s) => s.openFileByLink);
+  const scrollToHeadingId = useVaultStore((s) => s.scrollToHeadingId);
+  const clearScrollToHeading = useVaultStore((s) => s.clearScrollToHeading);
 
   const editor = useEditor({
     extensions: [
@@ -109,6 +111,13 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
       editor.commands.setContent(markdownToHtml(content));
     }
   }, [fileId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!scrollToHeadingId) return;
+    const el = document.getElementById(scrollToHeadingId);
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    clearScrollToHeading();
+  }, [scrollToHeadingId, clearScrollToHeading]);
 
   const setLink = useCallback(() => {
     if (!editor) return;

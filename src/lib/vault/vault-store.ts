@@ -75,6 +75,8 @@ interface VaultStore {
   graphFilter: string;
   isCommandPaletteOpen: boolean;
   recentFileIds: string[];
+  scrollToHeadingId: string | null;
+  dragItemId: string | null;
 
   loadVault: () => Promise<void>;
   openFile: (fileId: string, paneId?: string) => void;
@@ -86,6 +88,8 @@ interface VaultStore {
   createNote: (folderPath?: string) => Promise<void>;
   createFolder: (parentPath?: string) => Promise<void>;
   deleteFile: (fileId: string) => Promise<void>;
+  renameNode: (nodeId: string, newName: string) => Promise<void>;
+  moveFile: (fileId: string, targetFolderPath: string) => Promise<void>;
   collapseAllFolders: () => void;
   toggleFolder: (folderId: string) => void;
   setLeftPanel: (panel: LeftPanel) => void;
@@ -96,6 +100,9 @@ interface VaultStore {
   setSearchQuery: (query: string) => void;
   setGraphFilter: (filter: string) => void;
   setCommandPaletteOpen: (open: boolean) => void;
+  scrollToHeading: (headingId: string) => void;
+  clearScrollToHeading: () => void;
+  setDragItemId: (id: string | null) => void;
   setPaneEditorMode: (paneId: string, mode: EditorMode) => void;
   setActivePane: (paneId: string) => void;
   splitPane: (direction: "vertical" | "horizontal") => void;
@@ -137,6 +144,8 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   graphFilter: "",
   isCommandPaletteOpen: false,
   recentFileIds: [],
+  scrollToHeadingId: null,
+  dragItemId: null,
 
   loadVault: async () => {
     try {
@@ -320,6 +329,72 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
     pluginRegistry.fireHook("onFileDelete", file.path);
   },
 
+  renameNode: async (nodeId: string, newName: string) => {
+    const { vault } = get();
+    const node = findNodeById(vault, nodeId);
+    if (!node || !newName.trim()) return;
+
+    const trimmed = newName.trim();
+    const parentPath = node.path.includes("/")
+      ? node.path.split("/").slice(0, -1).join("/")
+      : "";
+
+    const isFile = node.type === "file";
+    const finalName = isFile
+      ? trimmed.endsWith(".md")
+        ? trimmed
+        : `${trimmed}.md`
+      : trimmed;
+    const newPath = parentPath ? `${parentPath}/${finalName}` : finalName;
+
+    if (newPath === node.path) return;
+
+    try {
+      const res = await fetch("/api/vault", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "rename", path: node.path, newPath }),
+      });
+      const data = await res.json();
+      if (data.vault) {
+        const newId = pathToId(newPath);
+        remapFileReferences(nodeId, newId, node.path, newPath);
+        set({ vault: data.vault });
+      }
+    } catch {
+      /* ignore */
+    }
+  },
+
+  moveFile: async (fileId: string, targetFolderPath: string) => {
+    const file = findFileById(get().vault, fileId);
+    if (!file) return;
+
+    const currentFolder = file.path.includes("/")
+      ? file.path.split("/").slice(0, -1).join("/")
+      : "";
+    if (currentFolder === targetFolderPath) return;
+
+    try {
+      const res = await fetch("/api/vault", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "move", path: file.path, targetFolder: targetFolderPath }),
+      });
+      const data = await res.json();
+      if (data.vault) {
+        const segments = file.path.split("/");
+        const fileName = segments[segments.length - 1];
+        const newPath = targetFolderPath ? `${targetFolderPath}/${fileName}` : fileName;
+        const newId = pathToId(newPath);
+        remapFileReferences(fileId, newId, file.path, newPath);
+        set({ vault: data.vault });
+      }
+    } catch {
+      /* ignore */
+    }
+  },
+
   toggleFolder: (folderId: string) => {
     set((state) => ({
       vault: toggleFolderExpanded(state.vault, folderId) as VaultFolder,
@@ -405,6 +480,9 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
 
   setGraphFilter: (filter: string) => set({ graphFilter: filter }),
   setCommandPaletteOpen: (open: boolean) => set({ isCommandPaletteOpen: open }),
+  scrollToHeading: (headingId: string) => set({ scrollToHeadingId: headingId }),
+  clearScrollToHeading: () => set({ scrollToHeadingId: null }),
+  setDragItemId: (id: string | null) => set({ dragItemId: id }),
 
   setPaneEditorMode: (paneId: string, mode: EditorMode) => {
     set((state) => ({
@@ -509,4 +587,29 @@ export async function initializeVault() {
 
   const welcome = state.getAllFiles().find((f) => f.path === "Welcome.md");
   if (welcome) state.openFile(welcome.id);
+}
+
+/** Finds any vault node by id */
+function findNodeById(node: import("./types").VaultNode, id: string): import("./types").VaultNode | null {
+  if (node.id === id) return node;
+  if (node.type === "folder") {
+    for (const child of node.children) {
+      const found = findNodeById(child, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+/** Remaps tab, pane, and recent references after rename/move */
+function remapFileReferences(oldId: string, newId: string, oldPath: string, newPath: string): void {
+  useVaultStore.setState((state) => ({
+    tabs: state.tabs.map((t) =>
+      t.fileId === oldId
+        ? { ...t, fileId: newId, filePath: newPath, fileName: getFileDisplayName(newPath) }
+        : t
+    ),
+    panes: state.panes.map((p) => (p.fileId === oldId ? { ...p, fileId: newId } : p)),
+    recentFileIds: state.recentFileIds.map((id) => (id === oldId ? newId : id)),
+  }));
 }

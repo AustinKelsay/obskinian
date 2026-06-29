@@ -129,6 +129,19 @@ export function deleteFromDisk(targetPath: string): void {
   }
 }
 
+/** Renames or moves a file/folder on disk */
+export function renameOnDisk(oldPath: string, newPath: string): void {
+  const oldFull = path.join(VAULT_ROOT, oldPath);
+  const newFull = path.join(VAULT_ROOT, newPath);
+
+  if (!fs.existsSync(oldFull)) throw new Error(`Not found: ${oldPath}`);
+  if (fs.existsSync(newFull)) throw new Error(`Already exists: ${newPath}`);
+
+  const dir = path.dirname(newFull);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.renameSync(oldFull, newFull);
+}
+
 /** Returns the absolute vault root path */
 export function getVaultRoot(): string {
   return VAULT_ROOT;

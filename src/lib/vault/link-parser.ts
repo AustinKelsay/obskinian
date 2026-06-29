@@ -14,6 +14,11 @@ export function extractWikiLinks(content: string): string[] {
   return links;
 }
 
+/** Converts heading text to a DOM id slug */
+export function headingToId(text: string): string {
+  return text.replace(/\[\[|\]\]/g, "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+}
+
 /** Extracts markdown headings for the outline panel */
 export function extractHeadings(content: string): { level: number; text: string; id: string }[] {
   const headings: { level: number; text: string; id: string }[] = [];
@@ -23,8 +28,7 @@ export function extractHeadings(content: string): { level: number; text: string;
     if (match) {
       const level = match[1].length;
       const text = match[2].replace(/\[\[|\]\]/g, "").trim();
-      const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      headings.push({ level, text, id });
+      headings.push({ level, text, id: headingToId(text) });
     }
   }
   return headings;
@@ -59,12 +63,12 @@ export function markdownToHtml(md: string): string {
     return `<pre><code${langAttr}>${escapeHtml(code.trim())}</code></pre>`;
   });
 
-  html = html.replace(/^######\s+(.+)$/gm, "<h6>$1</h6>");
-  html = html.replace(/^#####\s+(.+)$/gm, "<h5>$1</h5>");
-  html = html.replace(/^####\s+(.+)$/gm, "<h4>$1</h4>");
-  html = html.replace(/^###\s+(.+)$/gm, "<h3>$1</h3>");
-  html = html.replace(/^##\s+(.+)$/gm, "<h2>$1</h2>");
-  html = html.replace(/^#\s+(.+)$/gm, "<h1>$1</h1>");
+  html = html.replace(/^######\s+(.+)$/gm, (_, t) => `<h6 id="${headingToId(t)}">${t}</h6>`);
+  html = html.replace(/^#####\s+(.+)$/gm, (_, t) => `<h5 id="${headingToId(t)}">${t}</h5>`);
+  html = html.replace(/^####\s+(.+)$/gm, (_, t) => `<h4 id="${headingToId(t)}">${t}</h4>`);
+  html = html.replace(/^###\s+(.+)$/gm, (_, t) => `<h3 id="${headingToId(t)}">${t}</h3>`);
+  html = html.replace(/^##\s+(.+)$/gm, (_, t) => `<h2 id="${headingToId(t)}">${t}</h2>`);
+  html = html.replace(/^#\s+(.+)$/gm, (_, t) => `<h1 id="${headingToId(t)}">${t}</h1>`);
 
   html = html.replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>");
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");

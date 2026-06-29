@@ -17,6 +17,8 @@ interface SourceEditorProps {
 /** Monospace markdown source editor */
 export function SourceEditor({ fileId, content }: SourceEditorProps) {
   const updateContent = useVaultStore((s) => s.updateContent);
+  const scrollToHeadingId = useVaultStore((s) => s.scrollToHeadingId);
+  const clearScrollToHeading = useVaultStore((s) => s.clearScrollToHeading);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -25,6 +27,22 @@ export function SourceEditor({ fileId, content }: SourceEditorProps) {
       textareaRef.current.value = content;
     }
   }, [fileId, content]);
+
+  useEffect(() => {
+    if (!scrollToHeadingId || !textareaRef.current) return;
+    const lines = content.split("\n");
+    const idx = lines.findIndex((line) => {
+      const match = line.match(/^#{1,6}\s+(.+)$/);
+      if (!match) return false;
+      const id = match[1].replace(/\[\[|\]\]/g, "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      return id === scrollToHeadingId;
+    });
+    if (idx >= 0) {
+      const lineHeight = 20;
+      textareaRef.current.scrollTop = idx * lineHeight;
+    }
+    clearScrollToHeading();
+  }, [scrollToHeadingId, content, clearScrollToHeading]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
