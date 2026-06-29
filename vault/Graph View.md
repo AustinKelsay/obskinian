@@ -1,0 +1,23 @@
+# Graph View
+
+The **Graph View** visualizes connections between your notes. Each node represents a note, and edges represent `[[wiki-links]]`.
+
+## How It Works
+
+When you create a link like `[[Knowledge Graph Theory]]`, Obsidian draws a connection between the two notes in the graph.
+
+## Graph Controls
+
+- **Zoom**: Scroll wheel
+- **Pan**: Click and drag background
+- **Focus**: Click a node to open that note
+- **Filter**: Use the search box to highlight specific notes
+
+## Related Notes
+
+- [[Welcome]]
+- [[Knowledge Graph Theory]]
+- [[Projects/Obsidian Clone]]
+- [[MOC - Knowledge Management]]
+
+#graph #visualization #connections
