@@ -31,8 +31,12 @@ import {
   removeNodeFromTree,
   toggleFolderExpanded,
   updateFileContent,
+  updateFileFields,
+  updateFileFrontmatter,
 } from "./vault-data";
-import { extractWikiLinks } from "./link-parser";
+import { extractWikiLinks, normalizeLinkTarget } from "./link-parser";
+import { serializeNote, parseNote } from "./frontmatter";
+import type { FrontmatterValue } from "./frontmatter";
 import { filterGraphByMode, filterGraphByText } from "./graph-utils";
 import { processTemplateContent } from "./templates";
 import { getFileDisplayName, pathToId } from "../utils";
@@ -96,6 +100,8 @@ interface VaultStore {
   pinTab: (tabId: string) => void;
   reorderTabs: (dragTabId: string, targetTabId: string) => void;
   updateContent: (fileId: string, content: string) => void;
+  updateFrontmatter: (fileId: string, frontmatter: Record<string, FrontmatterValue>) => void;
+  updateFileRaw: (fileId: string, raw: string) => void;
   createNote: (folderPath?: string) => Promise<void>;
   createNoteFromTemplate: (templateFileId: string, folderPath?: string) => Promise<void>;
   createFolder: (parentPath?: string) => Promise<void>;
@@ -131,11 +137,12 @@ let tabCounter = 0;
 let paneCounter = 1;
 
 /** Persists file content to the vault API */
-async function persistFile(path: string, content: string): Promise<void> {
+async function persistFile(path: string, content: string, frontmatter: Record<string, FrontmatterValue>): Promise<void> {
+  const raw = serializeNote(frontmatter, content);
   await fetch("/api/vault", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, content }),
+    body: JSON.stringify({ path, content: raw }),
   });
 }
 
@@ -220,8 +227,20 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   },
 
   openFileByLink: (link: string) => {
-    const file = findFileByLink(get().vault, link);
-    if (file) get().openFile(file.id);
+    const headingMatch = link.match(/#(.+)$/);
+    const linkTarget = normalizeLinkTarget(link);
+    const file = findFileByLink(get().vault, linkTarget);
+    if (file) {
+      get().openFile(file.id);
+      if (headingMatch) {
+        const headingSlug = headingMatch[1]
+          .replace(/\[\[|\]\]/g, "")
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-");
+        get().scrollToHeading(headingSlug);
+      }
+    }
   },
 
   closeTab: (tabId: string) => {
@@ -294,8 +313,30 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
       vault: updateFileContent(state.vault, fileId, content) as VaultFolder,
     }));
     if (file) {
-      persistFile(file.path, content);
+      persistFile(file.path, content, file.frontmatter ?? {});
       pluginRegistry.fireHook("onFileSave", file.path, content);
+    }
+  },
+
+  updateFrontmatter: (fileId: string, frontmatter: Record<string, FrontmatterValue>) => {
+    const file = findFileById(get().vault, fileId);
+    set((state) => ({
+      vault: updateFileFrontmatter(state.vault, fileId, frontmatter) as VaultFolder,
+    }));
+    if (file) {
+      persistFile(file.path, file.content, frontmatter);
+    }
+  },
+
+  updateFileRaw: (fileId: string, raw: string) => {
+    const { frontmatter, body } = parseNote(raw);
+    const file = findFileById(get().vault, fileId);
+    set((state) => ({
+      vault: updateFileFields(state.vault, fileId, { content: body, frontmatter }) as VaultFolder,
+    }));
+    if (file) {
+      persistFile(file.path, body, frontmatter);
+      pluginRegistry.fireHook("onFileSave", file.path, body);
     }
   },
 
@@ -327,6 +368,7 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
         type: "file",
         path: filePath,
         content,
+        frontmatter: {},
         createdAt: new Date().toISOString(),
         modifiedAt: new Date().toISOString(),
       };
@@ -372,6 +414,7 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
         type: "file",
         path: filePath,
         content,
+        frontmatter: {},
         createdAt: new Date().toISOString(),
         modifiedAt: new Date().toISOString(),
       };

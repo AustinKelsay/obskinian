@@ -1,16 +1,22 @@
 /**
- * Right sidebar panels: outline, backlinks, and tags.
+ * Right sidebar panels: outline, backlinks, tags, and properties.
  * Provides contextual information about the active note.
  */
 
 "use client";
 
-import { ListTree, Link2, Tag, PanelRightClose } from "lucide-react";
+import { ListTree, Link2, Tag, PanelRightClose, FileJson } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RightPanel } from "@/lib/vault/types";
 import { useVaultStore } from "@/lib/vault/vault-store";
-import { extractHeadings, extractTags, findBacklinks } from "@/lib/vault/link-parser";
+import {
+  extractHeadings,
+  extractTags,
+  findLinkedBacklinks,
+  findUnlinkedMentions,
+} from "@/lib/vault/link-parser";
 import { BacklinkItem } from "@/components/backlinks/BacklinkItem";
+import { PropertiesPanel } from "@/components/properties/PropertiesPanel";
 
 /** Right sidebar with tabbed panels */
 export function RightSidebar({ className }: { className?: string }) {
@@ -34,11 +40,15 @@ export function RightSidebar({ className }: { className?: string }) {
     { id: "outline", icon: <ListTree size={14} />, label: "Outline" },
     { id: "backlinks", icon: <Link2 size={14} />, label: "Backlinks" },
     { id: "tags", icon: <Tag size={14} />, label: "Tags" },
+    { id: "properties", icon: <FileJson size={14} />, label: "Props" },
   ];
 
   const headings = activeFile ? extractHeadings(activeFile.content) : [];
-  const backlinks = activeFile
-    ? findBacklinks(activeFile.name, allFiles)
+  const linkedBacklinks = activeFile
+    ? findLinkedBacklinks(activeFile.name, allFiles)
+    : [];
+  const unlinkedMentions = activeFile
+    ? findUnlinkedMentions(activeFile.name, allFiles)
     : [];
   const tags = activeFile ? extractTags(activeFile.content) : [];
 
@@ -47,7 +57,7 @@ export function RightSidebar({ className }: { className?: string }) {
   return (
     <div className={cn("flex h-full w-[260px] shrink-0 flex-col border-l border-obs-border bg-obs-sidebar", className)}>
       <div className="flex h-[36px] shrink-0 items-center justify-between border-b border-obs-border px-2">
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5 overflow-x-auto">
           {panels.map((panel) => (
             <button
               key={panel.id}
@@ -56,7 +66,7 @@ export function RightSidebar({ className }: { className?: string }) {
               aria-label={panel.label}
               onClick={() => setRightPanel(panel.id)}
               className={cn(
-                "flex h-7 items-center gap-1 rounded px-2 text-[11px] transition-colors",
+                "flex h-7 shrink-0 items-center gap-1 rounded px-2 text-[11px] transition-colors",
                 rightPanel === panel.id
                   ? "bg-obs-accent/15 text-obs-accent"
                   : "text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
@@ -72,7 +82,7 @@ export function RightSidebar({ className }: { className?: string }) {
           title="Close sidebar"
           aria-label="Close sidebar"
           onClick={toggleRightSidebar}
-          className="flex h-6 w-6 items-center justify-center rounded text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
         >
           <PanelRightClose size={14} />
         </button>
@@ -106,17 +116,42 @@ export function RightSidebar({ className }: { className?: string }) {
             {!activeFile && (
               <p className="px-3 py-4 text-[13px] text-obs-text-faint">No note open.</p>
             )}
-            {backlinks.map((bl) => (
-              <BacklinkItem
-                key={bl.fileId}
-                fileName={bl.fileName}
-                context={bl.context}
-                onClick={() => openFile(bl.fileId)}
-              />
-            ))}
-            {activeFile && backlinks.length === 0 && (
+
+            {linkedBacklinks.length > 0 && (
+              <>
+                <p className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wider text-obs-text-faint">
+                  Linked mentions ({linkedBacklinks.length})
+                </p>
+                {linkedBacklinks.map((bl) => (
+                  <BacklinkItem
+                    key={`linked-${bl.fileId}`}
+                    fileName={bl.fileName}
+                    context={bl.context}
+                    onClick={() => openFile(bl.fileId)}
+                  />
+                ))}
+              </>
+            )}
+
+            {unlinkedMentions.length > 0 && (
+              <>
+                <p className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wider text-obs-text-faint">
+                  Unlinked mentions ({unlinkedMentions.length})
+                </p>
+                {unlinkedMentions.map((bl) => (
+                  <BacklinkItem
+                    key={`unlinked-${bl.fileId}`}
+                    fileName={bl.fileName}
+                    context={bl.context}
+                    onClick={() => openFile(bl.fileId)}
+                  />
+                ))}
+              </>
+            )}
+
+            {activeFile && linkedBacklinks.length === 0 && unlinkedMentions.length === 0 && (
               <p className="px-3 py-4 text-[13px] text-obs-text-faint">
-                No backlinks found.
+                No backlinks or mentions found.
               </p>
             )}
           </div>
@@ -144,6 +179,14 @@ export function RightSidebar({ className }: { className?: string }) {
               <p className="text-[13px] text-obs-text-faint">No tags found.</p>
             )}
           </div>
+        )}
+
+        {rightPanel === "properties" && activeFile && (
+          <PropertiesPanel fileId={activeFile.id} frontmatter={activeFile.frontmatter ?? {}} />
+        )}
+
+        {rightPanel === "properties" && !activeFile && (
+          <p className="px-3 py-4 text-[13px] text-obs-text-faint">No note open.</p>
         )}
       </div>
     </div>

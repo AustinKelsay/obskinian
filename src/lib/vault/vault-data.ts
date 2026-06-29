@@ -6,6 +6,9 @@
 
 import type { VaultFile, VaultFolder, VaultNode } from "./types";
 import { pathToId } from "../utils";
+import { parseNote } from "./frontmatter";
+import type { FrontmatterValue } from "./frontmatter";
+import { normalizeLinkTarget } from "./link-parser";
 
 /** Raw vault file entry used to seed the demo vault */
 interface VaultFileEntry {
@@ -267,12 +270,14 @@ function createFile(path: string, content: string): VaultFile {
   const segments = path.split("/");
   const name = segments[segments.length - 1];
   const now = new Date().toISOString();
+  const { frontmatter, body } = parseNote(content);
   return {
     id: pathToId(path),
     name,
     type: "file",
     path,
-    content,
+    content: body,
+    frontmatter,
     createdAt: now,
     modifiedAt: now,
   };
@@ -346,9 +351,9 @@ export function findFileById(node: VaultNode, id: string): VaultFile | null {
   return null;
 }
 
-/** Finds a file by path or wiki-link name */
+/** Finds a file by path or wiki-link name (supports #heading suffix) */
 export function findFileByLink(node: VaultNode, link: string): VaultFile | null {
-  const normalized = link.replace(/\.md$/, "").toLowerCase();
+  const normalized = normalizeLinkTarget(link.replace(/\.md$/, "")).toLowerCase();
 
   function search(n: VaultNode): VaultFile | null {
     if (n.type === "file") {
@@ -389,6 +394,42 @@ export function updateFileContent(node: VaultNode, fileId: string, content: stri
   return {
     ...node,
     children: node.children.map((c) => updateFileContent(c, fileId, content)),
+  };
+}
+
+/** Updates file frontmatter in the tree (immutable update) */
+export function updateFileFrontmatter(
+  node: VaultNode,
+  fileId: string,
+  frontmatter: Record<string, FrontmatterValue>
+): VaultNode {
+  if (node.type === "file") {
+    if (node.id !== fileId) return node;
+    return { ...node, frontmatter, modifiedAt: new Date().toISOString() };
+  }
+  return {
+    ...node,
+    children: node.children.map((c) => updateFileFrontmatter(c, fileId, frontmatter)),
+  };
+}
+
+/** Updates file body and frontmatter together (immutable update) */
+export function updateFileFields(
+  node: VaultNode,
+  fileId: string,
+  updates: { content?: string; frontmatter?: Record<string, FrontmatterValue> }
+): VaultNode {
+  if (node.type === "file") {
+    if (node.id !== fileId) return node;
+    return {
+      ...node,
+      ...updates,
+      modifiedAt: new Date().toISOString(),
+    };
+  }
+  return {
+    ...node,
+    children: node.children.map((c) => updateFileFields(c, fileId, updates)),
   };
 }
 

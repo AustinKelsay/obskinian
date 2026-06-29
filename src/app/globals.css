@@ -209,6 +209,80 @@ body {
   border-radius: 2px;
 }
 
+/* Obsidian-style callouts */
+.tiptap .callout {
+  border-radius: 6px;
+  margin: 1em 0;
+  padding: 0.75em 1em;
+  border-left: 4px solid var(--color-obs-accent);
+  background: var(--color-obs-bg-secondary);
+}
+
+.tiptap .callout-title {
+  font-weight: 600;
+  font-size: 0.9em;
+  margin-bottom: 0.4em;
+  text-transform: capitalize;
+}
+
+.tiptap .callout-content p {
+  margin: 0.25em 0;
+  color: var(--color-obs-text-muted);
+}
+
+.tiptap .callout-note { border-left-color: #448aff; background: rgba(68, 138, 255, 0.08); }
+.tiptap .callout-tip { border-left-color: #00bfa5; background: rgba(0, 191, 165, 0.08); }
+.tiptap .callout-warning { border-left-color: #ff9800; background: rgba(255, 152, 0, 0.08); }
+.tiptap .callout-danger { border-left-color: #f44336; background: rgba(244, 67, 54, 0.08); }
+.tiptap .callout-info { border-left-color: #00bcd4; background: rgba(0, 188, 212, 0.08); }
+
+.tiptap .callout-note .callout-title { color: #448aff; }
+.tiptap .callout-tip .callout-title { color: #00bfa5; }
+.tiptap .callout-warning .callout-title { color: #ff9800; }
+.tiptap .callout-danger .callout-title { color: #f44336; }
+.tiptap .callout-info .callout-title { color: #00bcd4; }
+
+/* Wiki embed blocks */
+.tiptap .wiki-embed {
+  border: 1px solid var(--color-obs-border);
+  border-radius: 8px;
+  margin: 1em 0;
+  overflow: hidden;
+  background: var(--color-obs-bg-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.tiptap .wiki-embed:hover {
+  border-color: var(--color-obs-accent);
+}
+
+.tiptap .wiki-embed-header {
+  padding: 0.4em 0.75em;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--color-obs-accent);
+  background: var(--color-obs-bg-tertiary);
+  border-bottom: 1px solid var(--color-obs-border);
+}
+
+.tiptap .wiki-embed-header::before {
+  content: "⎘ ";
+  opacity: 0.7;
+}
+
+.tiptap .wiki-embed-body {
+  padding: 0.75em 1em;
+  font-size: 0.9em;
+  color: var(--color-obs-text-muted);
+  line-height: 1.5;
+}
+
+.tiptap .wiki-embed-missing {
+  font-style: italic;
+  color: var(--color-obs-text-faint);
+}
+
 .graph-container canvas {
   display: block;
 }

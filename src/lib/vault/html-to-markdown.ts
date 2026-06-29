@@ -69,6 +69,21 @@ function serializeNode(node: ChildNode): string {
         .split("\n")
         .map((l) => `> ${l}`)
         .join("\n") ?? "";
+    case "div": {
+      if (el.classList.contains("callout")) {
+        const type = el.getAttribute("data-callout-type") ?? "note";
+        const title = el.querySelector(".callout-title")?.textContent?.trim() ?? "";
+        const contentLines =
+          el.querySelector(".callout-content")?.textContent?.trim().split("\n") ?? [];
+        const header = title ? `[!${type}] ${title}` : `[!${type}]`;
+        return [`> ${header}`, ...contentLines.filter(Boolean).map((l) => `> ${l}`)].join("\n");
+      }
+      if (el.classList.contains("wiki-embed")) {
+        const target = el.getAttribute("data-target") ?? "";
+        return `![[${target}]]`;
+      }
+      return serializeNodes(el.childNodes);
+    }
     case "hr":
       return "---";
     case "a": {

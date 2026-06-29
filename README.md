@@ -64,6 +64,13 @@ A **skin-deep front-end clone** of [Obsidian](https://obsidian.md) — built as 
 - **Custom CSS snippets** — inject personal CSS from Settings
 - **Export as HTML** — download active note as styled HTML (toolbar or command palette)
 
+### Phase 7
+- **YAML frontmatter** — properties panel for note metadata (title, tags, status, etc.)
+- **Obsidian callouts** — `> [!note]`, `> [!tip]`, `> [!warning]` styled blocks
+- **Note embeds** — `![[Note Name]]` transclusion with live preview
+- **Linked vs unlinked mentions** — backlinks panel splits wiki-links from plain-text references
+- **Heading links** — `[[Note#Heading]]` navigates and scrolls to the target heading
+
 ## Getting Started
 
 ```bash

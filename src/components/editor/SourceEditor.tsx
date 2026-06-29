@@ -5,9 +5,11 @@
 
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useVaultStore } from "@/lib/vault/vault-store";
+import { serializeNote } from "@/lib/vault/frontmatter";
+import type { FrontmatterValue } from "@/lib/vault/frontmatter";
 import { SlashCommandMenu } from "./SlashCommandMenu";
 import {
   applySourceSlashCommand,
@@ -19,11 +21,12 @@ import {
 interface SourceEditorProps {
   fileId: string;
   content: string;
+  frontmatter?: Record<string, FrontmatterValue>;
 }
 
 /** Monospace markdown source editor */
-export function SourceEditor({ fileId, content }: SourceEditorProps) {
-  const updateContent = useVaultStore((s) => s.updateContent);
+export function SourceEditor({ fileId, content, frontmatter = {} }: SourceEditorProps) {
+  const updateFileRaw = useVaultStore((s) => s.updateFileRaw);
   const scrollToHeadingId = useVaultStore((s) => s.scrollToHeadingId);
   const clearScrollToHeading = useVaultStore((s) => s.clearScrollToHeading);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -35,11 +38,16 @@ export function SourceEditor({ fileId, content }: SourceEditorProps) {
 
   const slashCommands = filterSlashCommands(slashQuery);
 
+  const rawContent = useMemo(
+    () => serializeNote(frontmatter, content),
+    [frontmatter, content]
+  );
+
   useEffect(() => {
-    if (textareaRef.current && textareaRef.current.value !== content) {
-      textareaRef.current.value = content;
+    if (textareaRef.current && textareaRef.current.value !== rawContent) {
+      textareaRef.current.value = rawContent;
     }
-  }, [fileId, content]);
+  }, [fileId, rawContent]);
 
   useEffect(() => {
     if (!scrollToHeadingId || !textareaRef.current) return;
@@ -81,12 +89,12 @@ export function SourceEditor({ fileId, content }: SourceEditorProps) {
       const { value, cursorPos } = applySourceSlashCommand(ta.value, ta.selectionStart, cmd);
       ta.value = value;
       ta.selectionStart = ta.selectionEnd = cursorPos;
-      updateContent(fileId, value);
+      updateFileRaw(fileId, ta.value);
       setSlashOpen(false);
       setSlashQuery("");
       setSlashIndex(0);
     },
-    [fileId, updateContent]
+    [fileId, updateFileRaw]
   );
 
   const handleChange = useCallback(
@@ -95,10 +103,10 @@ export function SourceEditor({ fileId, content }: SourceEditorProps) {
 
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
-        updateContent(fileId, e.target.value);
+        updateFileRaw(fileId, e.target.value);
       }, 300);
     },
-    [fileId, updateContent, detectSlash]
+    [fileId, updateFileRaw, detectSlash]
   );
 
   const handleKeyDown = useCallback(
@@ -152,7 +160,7 @@ export function SourceEditor({ fileId, content }: SourceEditorProps) {
       )}
       <textarea
         ref={textareaRef}
-        defaultValue={content}
+        defaultValue={rawContent}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         spellCheck={false}

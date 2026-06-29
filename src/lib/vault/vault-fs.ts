@@ -7,6 +7,7 @@ import fs from "fs";
 import path from "path";
 import type { VaultFile, VaultFolder, VaultNode } from "./types";
 import { pathToId } from "../utils";
+import { parseNote } from "./frontmatter";
 
 const VAULT_ROOT = path.join(process.cwd(), "vault");
 
@@ -51,12 +52,15 @@ function readDirectory(dirPath: string, relativePath: string): VaultNode[] {
       });
     } else if (entry.isFile() && entry.name.endsWith(".md")) {
       const stat = fs.statSync(fullPath);
+      const raw = fs.readFileSync(fullPath, "utf-8");
+      const { frontmatter, body } = parseNote(raw);
       nodes.push({
         id: pathToId(entryRelPath),
         name: entry.name,
         type: "file",
         path: entryRelPath,
-        content: fs.readFileSync(fullPath, "utf-8"),
+        content: body,
+        frontmatter,
         createdAt: stat.birthtime.toISOString(),
         modifiedAt: stat.mtime.toISOString(),
       });
@@ -98,13 +102,15 @@ export function createFileOnDisk(filePath: string, content = ""): VaultFile {
   writeFileToDisk(filePath, content);
   const stat = fs.statSync(fullPath);
   const segments = filePath.split("/");
+  const { frontmatter, body } = parseNote(content);
 
   return {
     id: pathToId(filePath),
     name: segments[segments.length - 1],
     type: "file",
     path: filePath,
-    content,
+    content: body,
+    frontmatter,
     createdAt: stat.birthtime.toISOString(),
     modifiedAt: stat.mtime.toISOString(),
   };

@@ -22,6 +22,7 @@ export function EditorArea() {
         paneId={pane.id}
         fileId={file.id}
         content={file.content}
+        frontmatter={file.frontmatter ?? {}}
         isActive
       />
     );
@@ -49,6 +50,7 @@ export function EditorArea() {
                 paneId={pane.id}
                 fileId={file.id}
                 content={file.content}
+                frontmatter={file.frontmatter ?? {}}
                 isActive={pane.id === activePaneId}
               />
             ) : (

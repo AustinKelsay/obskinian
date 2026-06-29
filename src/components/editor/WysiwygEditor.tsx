@@ -29,9 +29,10 @@ import {
   Link as LinkIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { markdownToHtml } from "@/lib/vault/link-parser";
+import { markdownToHtml, buildEmbedPreview } from "@/lib/vault/link-parser";
 import { htmlToMarkdown } from "@/lib/vault/html-to-markdown";
 import { useVaultStore } from "@/lib/vault/vault-store";
+import { findFileByLink } from "@/lib/vault/vault-data";
 import { SlashCommandMenu } from "./SlashCommandMenu";
 import {
   applyTiptapSlashCommand,
@@ -77,8 +78,20 @@ function ToolbarButton({ onClick, isActive, title, children }: ToolbarButtonProp
 export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygEditorProps) {
   const updateContent = useVaultStore((s) => s.updateContent);
   const openFileByLink = useVaultStore((s) => s.openFileByLink);
+  const vault = useVaultStore((s) => s.vault);
   const scrollToHeadingId = useVaultStore((s) => s.scrollToHeadingId);
   const clearScrollToHeading = useVaultStore((s) => s.clearScrollToHeading);
+
+  const resolveEmbed = useCallback(
+    (target: string) => {
+      const file = findFileByLink(vault, target);
+      if (!file) return null;
+      return buildEmbedPreview(file.content);
+    },
+    [vault]
+  );
+
+  const initialHtml = markdownToHtml(content, { resolveEmbed });
 
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashQuery, setSlashQuery] = useState("");
@@ -104,13 +117,21 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
       TaskList,
       TaskItem.configure({ nested: true }),
     ],
-    content: markdownToHtml(content),
+    content: initialHtml,
     editorProps: {
       attributes: {
         class: "tiptap",
       },
       handleClick: (_view, _pos, event) => {
         const target = event.target as HTMLElement;
+        const embedEl = target.closest(".wiki-embed") as HTMLElement | null;
+        if (embedEl) {
+          const linkTarget = embedEl.getAttribute("data-target");
+          if (linkTarget) {
+            openFileByLink(linkTarget);
+            return true;
+          }
+        }
         if (target.classList.contains("wiki-link")) {
           const linkTarget = target.getAttribute("data-target");
           if (linkTarget) {
@@ -190,9 +211,9 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
 
   useEffect(() => {
     if (editor && content !== htmlToMarkdown(editor.getHTML())) {
-      editor.commands.setContent(markdownToHtml(content));
+      editor.commands.setContent(markdownToHtml(content, { resolveEmbed }));
     }
-  }, [fileId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fileId, resolveEmbed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!scrollToHeadingId) return;

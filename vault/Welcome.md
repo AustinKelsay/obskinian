@@ -17,8 +17,12 @@ Obsidian stores your notes in a **vault** — a folder of plain-text Markdown fi
 - [x] Tabbed note editing
 - [x] Graph visualization
 - [x] Wiki-link syntax `[[like this]]`
+- [x] Callouts, embeds, and frontmatter properties
 - [ ] Plugin system (coming soon)
 - [ ] Sync (coming soon)
+
+> [!info] Transclusion
+> Notes can embed other notes inline: ![[Graph View]]
 
 ## Quick Links
 

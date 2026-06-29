@@ -22,7 +22,10 @@ export interface VaultFile {
   name: string;
   type: "file";
   path: string;
+  /** Note body without YAML frontmatter */
   content: string;
+  /** Parsed YAML frontmatter properties */
+  frontmatter: Record<string, import("./frontmatter").FrontmatterValue>;
   createdAt: string;
   modifiedAt: string;
 }
@@ -42,7 +45,7 @@ export interface EditorTab {
 export type LeftPanel = "explorer" | "search" | "graph" | "settings" | "none";
 
 /** Right sidebar panel identifiers */
-export type RightPanel = "outline" | "backlinks" | "tags" | "none";
+export type RightPanel = "outline" | "backlinks" | "tags" | "properties" | "none";
 
 /** Graph node for force-directed visualization */
 export interface GraphNode {
@@ -73,6 +76,15 @@ export interface SearchResult {
   fileName: string;
   snippet: string;
   matchIndex: number;
+}
+
+/** Backlink or mention entry for the backlinks panel */
+export interface BacklinkEntry {
+  fileId: string;
+  filePath: string;
+  fileName: string;
+  context: string;
+  kind: "linked" | "unlinked";
 }
 
 /** Application view mode */

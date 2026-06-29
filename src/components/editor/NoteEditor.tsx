@@ -17,11 +17,12 @@ interface NoteEditorProps {
   paneId: string;
   fileId: string;
   content: string;
+  frontmatter?: Record<string, import("@/lib/vault/frontmatter").FrontmatterValue>;
   isActive: boolean;
 }
 
 /** Editor pane with live/source mode toggle and split controls */
-export function NoteEditor({ paneId, fileId, content, isActive }: NoteEditorProps) {
+export function NoteEditor({ paneId, fileId, content, frontmatter = {}, isActive }: NoteEditorProps) {
   const {
     panes,
     splitDirection,
@@ -123,7 +124,7 @@ export function NoteEditor({ paneId, fileId, content, isActive }: NoteEditorProp
         {editorMode === "live" ? (
           <WysiwygEditor fileId={fileId} content={content} hideToolbar />
         ) : (
-          <SourceEditor fileId={fileId} content={content} />
+          <SourceEditor fileId={fileId} content={content} frontmatter={frontmatter} />
         )}
       </div>
     </div>
