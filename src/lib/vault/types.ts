@@ -77,3 +77,25 @@ export interface SearchResult {
 
 /** Application view mode */
 export type ViewMode = "editor" | "graph";
+
+/** Editor display mode — WYSIWYG or raw markdown source */
+export type EditorMode = "live" | "source";
+
+/** Split pane layout direction */
+export type SplitDirection = "none" | "vertical" | "horizontal";
+
+/** A single editor pane in a split layout */
+export interface EditorPane {
+  id: string;
+  fileId: string | null;
+  editorMode: EditorMode;
+}
+
+/** Command palette item */
+export interface CommandItem {
+  id: string;
+  label: string;
+  group: string;
+  shortcut?: string;
+  action: () => void;
+}

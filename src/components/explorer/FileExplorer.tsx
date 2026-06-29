@@ -11,7 +11,7 @@ import { FileTreeItem } from "./FileTreeItem";
 
 /** Left sidebar file explorer panel */
 export function FileExplorer() {
-  const vault = useVaultStore((s) => s.vault);
+  const { vault, createNote } = useVaultStore();
 
   return (
     <div className="flex h-full flex-col">
@@ -24,6 +24,7 @@ export function FileExplorer() {
             type="button"
             title="New note"
             aria-label="New note"
+            onClick={() => createNote()}
             className="flex h-6 w-6 items-center justify-center rounded text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
           >
             <FilePlus size={14} />

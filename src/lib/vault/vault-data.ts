@@ -392,4 +392,45 @@ export function updateFileContent(node: VaultNode, fileId: string, content: stri
   };
 }
 
+/** Sorts folder children recursively (folders first, then alphabetically) */
+function sortChildren(folder: VaultFolder): void {
+  folder.children.sort((a, b) => {
+    if (a.type !== b.type) return a.type === "folder" ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+  for (const child of folder.children) {
+    if (child.type === "folder") sortChildren(child);
+  }
+}
+
+/** Adds a file to the vault tree (immutable update) */
+export function addFileToTree(root: VaultFolder, file: VaultFile): VaultFolder {
+  const segments = file.path.split("/");
+  const copy = structuredClone(root) as VaultFolder;
+  insertFile(copy, segments, file);
+  sortChildren(copy);
+  return copy;
+}
+
+/** Removes a file or folder from the tree by id (immutable update) */
+export function removeNodeFromTree(node: VaultNode, targetId: string): VaultNode | null {
+  if (node.type === "file") {
+    return node.id === targetId ? null : node;
+  }
+
+  const children = node.children
+    .map((c) => removeNodeFromTree(c, targetId))
+    .filter((c): c is VaultNode => c !== null);
+
+  return { ...node, children };
+}
+
+/** Generates a unique untitled note path */
+export function generateUntitledPath(existingFiles: VaultFile[]): string {
+  let n = 1;
+  const names = new Set(existingFiles.map((f) => f.path));
+  while (names.has(`Untitled ${n}.md`)) n += 1;
+  return `Untitled ${n}.md`;
+}
+
 export { DEMO_FILES };

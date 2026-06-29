@@ -5,18 +5,21 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { PanelLeftClose, PanelRightClose } from "lucide-react";
 import { Ribbon } from "./Ribbon";
 import { TabBar } from "./TabBar";
 import { StatusBar } from "./StatusBar";
 import { RightSidebar } from "./RightSidebar";
+import { ResizablePanel } from "./ResizablePanel";
 import { FileExplorer } from "@/components/explorer/FileExplorer";
 import { SearchPanel } from "@/components/search/SearchPanel";
 import { GraphView } from "@/components/graph/GraphView";
-import { WysiwygEditor } from "@/components/editor/WysiwygEditor";
-import { ResizablePanel } from "./ResizablePanel";
+import { EditorArea } from "@/components/editor/EditorArea";
+import { CommandPalette } from "@/components/command/CommandPalette";
 import { useVaultStore, initializeVault } from "@/lib/vault/vault-store";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { registerBuiltinPlugins } from "@/lib/plugins/registry";
 
 /** Root layout shell matching Obsidian's workspace structure */
 export function AppShell() {
@@ -27,17 +30,63 @@ export function AppShell() {
     viewMode,
     toggleLeftSidebar,
     toggleRightSidebar,
-    getActiveFile,
+    panes,
+    getPaneFile,
+    setCommandPaletteOpen,
+    createNote,
+    closeTab,
+    activeTabId,
+    tabs,
+    setLeftPanel,
+    setViewMode,
+    activePaneId,
+    panes: paneList,
+    setPaneEditorMode,
   } = useVaultStore();
 
-  const activeFile = getActiveFile();
+  const hasPaneContent = panes.some((p) => getPaneFile(p.id) !== null);
 
   useEffect(() => {
+    registerBuiltinPlugins();
     initializeVault();
   }, []);
 
+  const shortcuts = useMemo(
+    () => ({
+      onCommandPalette: () => setCommandPaletteOpen(true),
+      onToggleSource: () => {
+        const pane = paneList.find((p) => p.id === activePaneId);
+        setPaneEditorMode(activePaneId, pane?.editorMode === "source" ? "live" : "source");
+      },
+      onCloseTab: () => {
+        if (activeTabId) closeTab(activeTabId);
+      },
+      onNewNote: () => createNote(),
+      onToggleGraph: () => {
+        setLeftPanel("graph");
+        setViewMode("graph");
+      },
+      onToggleSearch: () => setLeftPanel("search"),
+    }),
+    [
+      setCommandPaletteOpen,
+      activePaneId,
+      paneList,
+      setPaneEditorMode,
+      activeTabId,
+      closeTab,
+      createNote,
+      setLeftPanel,
+      setViewMode,
+    ]
+  );
+
+  useKeyboardShortcuts(shortcuts);
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-obs-bg">
+      <CommandPalette />
+
       <div className="flex flex-1 overflow-hidden">
         <Ribbon />
 
@@ -77,14 +126,10 @@ export function AppShell() {
           <div className="flex flex-1 overflow-hidden">
             {viewMode === "graph" ? (
               <GraphView />
-            ) : activeFile ? (
-              <WysiwygEditor
-                key={activeFile.id}
-                fileId={activeFile.id}
-                content={activeFile.content}
-              />
+            ) : hasPaneContent || tabs.length > 0 ? (
+              <EditorArea />
             ) : (
-              <EmptyState />
+              <EmptyState onCreateNote={() => createNote()} />
             )}
           </div>
         </div>
@@ -98,16 +143,25 @@ export function AppShell() {
 }
 
 /** Shown when no note is open */
-function EmptyState() {
+function EmptyState({ onCreateNote }: { onCreateNote: () => void }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-obs-bg text-obs-text-muted">
       <div className="text-6xl opacity-20">◇</div>
       <div className="text-center">
         <p className="text-lg font-medium text-obs-text">No note open</p>
         <p className="mt-1 text-[13px] text-obs-text-faint">
-          Select a note from the file explorer or search for one
+          Select a note from the file explorer, or press{" "}
+          <kbd className="rounded border border-obs-border px-1.5 py-0.5 text-[11px]">⌘P</kbd>{" "}
+          to open the command palette
         </p>
       </div>
+      <button
+        type="button"
+        onClick={onCreateNote}
+        className="mt-2 rounded-md bg-obs-accent/20 px-4 py-2 text-[13px] text-obs-accent transition-colors hover:bg-obs-accent/30"
+      >
+        Create new note
+      </button>
     </div>
   );
 }

@@ -19,7 +19,7 @@ interface RibbonItem {
 
 /** Vertical icon ribbon on the far left of the app shell */
 export function Ribbon() {
-  const { leftPanel, setLeftPanel, setViewMode } = useVaultStore();
+  const { leftPanel, setLeftPanel, setViewMode, setCommandPaletteOpen } = useVaultStore();
 
   const items: RibbonItem[] = [
     {
@@ -76,8 +76,9 @@ export function Ribbon() {
       <div className="flex flex-col items-center gap-1">
         <button
           type="button"
-          title="Settings"
-          aria-label="Settings"
+          title="Command palette"
+          aria-label="Command palette"
+          onClick={() => setCommandPaletteOpen(true)}
           className="flex h-9 w-9 items-center justify-center rounded-md text-obs-text-muted transition-colors hover:bg-obs-interactive-hover hover:text-obs-text"
         >
           <Settings size={18} strokeWidth={1.5} />
