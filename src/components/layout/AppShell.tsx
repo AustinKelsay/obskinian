@@ -15,6 +15,7 @@ import { FileExplorer } from "@/components/explorer/FileExplorer";
 import { SearchPanel } from "@/components/search/SearchPanel";
 import { GraphView } from "@/components/graph/GraphView";
 import { WysiwygEditor } from "@/components/editor/WysiwygEditor";
+import { ResizablePanel } from "./ResizablePanel";
 import { useVaultStore, initializeVault } from "@/lib/vault/vault-store";
 
 /** Root layout shell matching Obsidian's workspace structure */
@@ -41,10 +42,10 @@ export function AppShell() {
         <Ribbon />
 
         {isLeftSidebarOpen && leftPanel !== "graph" && (
-          <div className="flex w-[260px] shrink-0 flex-col border-r border-obs-border bg-obs-sidebar">
+          <ResizablePanel side="left" className="border-r border-obs-border bg-obs-sidebar">
             {leftPanel === "explorer" && <FileExplorer />}
             {leftPanel === "search" && <SearchPanel />}
-          </div>
+          </ResizablePanel>
         )}
 
         <div className="flex flex-1 flex-col overflow-hidden">

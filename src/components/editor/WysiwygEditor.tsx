@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { markdownToHtml } from "@/lib/vault/link-parser";
+import { htmlToMarkdown } from "@/lib/vault/html-to-markdown";
 import { useVaultStore } from "@/lib/vault/vault-store";
 
 interface WysiwygEditorProps {
@@ -98,12 +99,12 @@ export function WysiwygEditor({ fileId, content }: WysiwygEditorProps) {
       },
     },
     onUpdate: ({ editor: ed }) => {
-      updateContent(fileId, ed.getText());
+      updateContent(fileId, htmlToMarkdown(ed.getHTML()));
     },
   });
 
   useEffect(() => {
-    if (editor && content !== editor.getText()) {
+    if (editor && content !== htmlToMarkdown(editor.getHTML())) {
       editor.commands.setContent(markdownToHtml(content));
     }
   }, [fileId]); // eslint-disable-line react-hooks/exhaustive-deps

@@ -142,11 +142,14 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   },
 
   setLeftPanel: (panel: LeftPanel) => {
-    set((state) => ({
-      leftPanel: state.leftPanel === panel ? "none" : panel,
-      isLeftSidebarOpen: state.leftPanel === panel ? false : true,
-      viewMode: panel === "graph" ? "graph" : state.viewMode,
-    }));
+    set((state) => {
+      const isClosing = state.leftPanel === panel && panel !== "none";
+      return {
+        leftPanel: isClosing ? "none" : panel,
+        isLeftSidebarOpen: !isClosing,
+        viewMode: panel === "graph" && !isClosing ? "graph" : isClosing ? state.viewMode : panel === "graph" ? "graph" : "editor",
+      };
+    });
   },
 
   setRightPanel: (panel: RightPanel) => {

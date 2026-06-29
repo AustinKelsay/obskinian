@@ -1,0 +1,82 @@
+/**
+ * Resizable panel wrapper with drag handle.
+ * Allows horizontal resizing of sidebars like Obsidian.
+ */
+
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
+
+interface ResizablePanelProps {
+  children: React.ReactNode;
+  defaultWidth?: number;
+  minWidth?: number;
+  maxWidth?: number;
+  side: "left" | "right";
+  className?: string;
+}
+
+/** Horizontally resizable sidebar panel */
+export function ResizablePanel({
+  children,
+  defaultWidth = 260,
+  minWidth = 180,
+  maxWidth = 480,
+  side,
+  className,
+}: ResizablePanelProps) {
+  const [width, setWidth] = useState(defaultWidth);
+  const dragging = useRef(false);
+  const startX = useRef(0);
+  const startWidth = useRef(defaultWidth);
+
+  const onMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      dragging.current = true;
+      startX.current = e.clientX;
+      startWidth.current = width;
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    },
+    [width]
+  );
+
+  const onMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!dragging.current) return;
+      const delta = side === "left" ? e.clientX - startX.current : startX.current - e.clientX;
+      const next = Math.min(maxWidth, Math.max(minWidth, startWidth.current + delta));
+      setWidth(next);
+    },
+    [side, minWidth, maxWidth]
+  );
+
+  const onMouseUp = useCallback(() => {
+    dragging.current = false;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [onMouseMove, onMouseUp]);
+
+  return (
+    <div className={cn("relative flex shrink-0 flex-col", className)} style={{ width }}>
+      {children}
+      <div
+        className={cn(
+          "absolute top-0 z-10 h-full w-1 cursor-col-resize transition-colors hover:bg-obs-accent/40",
+          side === "left" ? "right-0" : "left-0"
+        )}
+        onMouseDown={onMouseDown}
+      />
+    </div>
+  );
+}
