@@ -26,20 +26,20 @@ export function TemplatePicker() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 pt-[20vh]"
+      className="obs-modal-overlay fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[20vh]"
       onClick={() => setTemplatePickerOpen(false)}
     >
       <div
-        className="w-[420px] overflow-hidden rounded-lg border border-obs-border bg-obs-bg-secondary shadow-2xl"
+        className="w-[min(420px,calc(100vw-2rem))] overflow-hidden border border-obs-border bg-obs-bg-secondary shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-obs-border px-4 py-3">
-          <span className="text-[14px] font-medium text-obs-text">Insert template</span>
+          <span className="text-[13px] font-medium text-obs-text">Insert template</span>
           <button
             type="button"
             aria-label="Close"
             onClick={() => setTemplatePickerOpen(false)}
-            className="text-obs-text-muted hover:text-obs-text"
+            className="rounded-sm p-0.5 text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
           >
             <X size={16} />
           </button>
@@ -56,7 +56,7 @@ export function TemplatePicker() {
               key={template.id}
               type="button"
               className={cn(
-                "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
+                "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors",
                 "text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
               )}
               onClick={() => {

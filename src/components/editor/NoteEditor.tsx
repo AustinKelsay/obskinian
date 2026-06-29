@@ -46,16 +46,16 @@ export function NoteEditor({ paneId, fileId, content, frontmatter = {}, isActive
       )}
       onClick={() => setActivePane(paneId)}
     >
-      <div className="flex h-[30px] shrink-0 items-center gap-1 border-b border-obs-border bg-obs-bg-secondary px-2">
+      <div className="flex h-[36px] shrink-0 items-center gap-1 border-b border-obs-border bg-obs-bg-secondary px-2">
         <button
           type="button"
           title="Live preview (Ctrl+E)"
           onClick={() => setPaneEditorMode(paneId, "live")}
           className={cn(
-            "flex h-6 items-center gap-1 rounded px-2 text-[11px] transition-colors",
+            "flex h-7 items-center gap-1 rounded-sm px-2 text-[11px] transition-colors",
             editorMode === "live"
-              ? "bg-obs-accent/20 text-obs-accent"
-              : "text-obs-text-muted hover:text-obs-text"
+              ? "bg-obs-interactive-hover text-obs-accent"
+              : "text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
           )}
         >
           <Eye size={12} />
@@ -66,10 +66,10 @@ export function NoteEditor({ paneId, fileId, content, frontmatter = {}, isActive
           title="Source mode"
           onClick={() => setPaneEditorMode(paneId, "source")}
           className={cn(
-            "flex h-6 items-center gap-1 rounded px-2 text-[11px] transition-colors",
+            "flex h-7 items-center gap-1 rounded-sm px-2 text-[11px] transition-colors",
             editorMode === "source"
-              ? "bg-obs-accent/20 text-obs-accent"
-              : "text-obs-text-muted hover:text-obs-text"
+              ? "bg-obs-interactive-hover text-obs-accent"
+              : "text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
           )}
         >
           <Code size={12} />
@@ -80,10 +80,10 @@ export function NoteEditor({ paneId, fileId, content, frontmatter = {}, isActive
           title="Split preview (source + reading)"
           onClick={() => setPaneEditorMode(paneId, "split")}
           className={cn(
-            "flex h-6 items-center gap-1 rounded px-2 text-[11px] transition-colors",
+            "flex h-7 items-center gap-1 rounded-sm px-2 text-[11px] transition-colors",
             editorMode === "split"
-              ? "bg-obs-accent/20 text-obs-accent"
-              : "text-obs-text-muted hover:text-obs-text"
+              ? "bg-obs-interactive-hover text-obs-accent"
+              : "text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
           )}
         >
           <PanelsLeftRight size={12} />
@@ -94,10 +94,10 @@ export function NoteEditor({ paneId, fileId, content, frontmatter = {}, isActive
           title="Reading mode"
           onClick={() => setPaneEditorMode(paneId, "reading")}
           className={cn(
-            "flex h-6 items-center gap-1 rounded px-2 text-[11px] transition-colors",
+            "flex h-7 items-center gap-1 rounded-sm px-2 text-[11px] transition-colors",
             editorMode === "reading"
-              ? "bg-obs-accent/20 text-obs-accent"
-              : "text-obs-text-muted hover:text-obs-text"
+              ? "bg-obs-interactive-hover text-obs-accent"
+              : "text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
           )}
         >
           <BookOpen size={12} />

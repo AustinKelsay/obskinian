@@ -6,6 +6,7 @@
 "use client";
 
 import { FolderPlus, FilePlus, ChevronsDownUp, LayoutTemplate } from "lucide-react";
+import { iconBtnClass, panelHeaderClass, panelTitleClass } from "@/lib/ui-classes";
 import { useVaultStore } from "@/lib/vault/vault-store";
 import { FileTreeItem } from "./FileTreeItem";
 
@@ -16,17 +17,15 @@ export function FileExplorer() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-[36px] shrink-0 items-center justify-between border-b border-obs-border px-3">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-obs-text-muted">
-          Files
-        </span>
+      <div className={panelHeaderClass}>
+        <span className={panelTitleClass}>File explorer</span>
         <div className="flex items-center gap-0.5">
           <button
             type="button"
             title="New note"
             aria-label="New note"
             onClick={() => createNote()}
-            className="flex h-6 w-6 items-center justify-center rounded text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
+            className={iconBtnClass}
           >
             <FilePlus size={14} />
           </button>
@@ -35,7 +34,7 @@ export function FileExplorer() {
             title="Insert template"
             aria-label="Insert template"
             onClick={() => setTemplatePickerOpen(true)}
-            className="flex h-6 w-6 items-center justify-center rounded text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
+            className={iconBtnClass}
           >
             <LayoutTemplate size={14} />
           </button>
@@ -44,7 +43,7 @@ export function FileExplorer() {
             title="New folder"
             aria-label="New folder"
             onClick={() => createFolder()}
-            className="flex h-6 w-6 items-center justify-center rounded text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
+            className={iconBtnClass}
           >
             <FolderPlus size={14} />
           </button>
@@ -53,7 +52,7 @@ export function FileExplorer() {
             title="Collapse all"
             aria-label="Collapse all"
             onClick={() => collapseAllFolders()}
-            className="flex h-6 w-6 items-center justify-center rounded text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
+            className={iconBtnClass}
           >
             <ChevronsDownUp size={14} />
           </button>

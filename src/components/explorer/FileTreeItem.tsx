@@ -238,7 +238,7 @@ export function FileTreeItem({ node, depth = 0 }: FileTreeItemProps) {
           className={cn(
             "flex w-full items-center gap-1.5 rounded-sm px-1 py-[3px] text-[13px] transition-colors",
             isActive
-              ? "bg-obs-accent/15 text-obs-text"
+              ? "relative bg-obs-interactive-hover text-obs-text before:absolute before:inset-y-0.5 before:left-0 before:w-[2px] before:rounded-r before:bg-obs-accent"
               : "text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
           )}
           style={{ paddingLeft: `${depth * 16 + 22}px` }}
@@ -248,7 +248,7 @@ export function FileTreeItem({ node, depth = 0 }: FileTreeItemProps) {
             startRename();
           }}
         >
-          <FileText size={14} className="shrink-0 text-obs-text-faint" />
+          <FileText size={14} className={cn("shrink-0", isActive ? "text-obs-accent" : "text-obs-text-faint")} />
           <span className="truncate">{displayName}</span>
         </button>
       )}

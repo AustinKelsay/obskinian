@@ -28,8 +28,8 @@
   --color-obs-link: #7f6df2;
   --color-obs-code-bg: #1a1a1a;
   --color-obs-scrollbar: #404040;
-  --font-obs: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-obs-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-obs: var(--font-inter, "Inter"), ui-sans-serif, system-ui, sans-serif;
+  --font-obs-mono: var(--font-jetbrains-mono, "JetBrains Mono"), ui-monospace, monospace;
 }
 
 * {
@@ -65,7 +65,21 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--color-obs-border-light);
+}
+
+.graph-container canvas {
+  display: block;
+}
+
+/* Shared Obsidian chrome utilities */
+.obs-modal-overlay {
+  background: rgb(0 0 0 / 40%);
+}
+
+.obs-modal-panel {
+  width: min(520px, calc(100vw - 2rem));
+  border-radius: 4px;
 }
 
 ::selection {
@@ -361,8 +375,4 @@ body {
 .reading-view .katex-display {
   margin: 1em 0;
   overflow-x: auto;
-}
-
-.graph-container canvas {
-  display: block;
 }

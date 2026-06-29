@@ -10,7 +10,7 @@ import {
   Search,
   FileText,
   Zap,
-  Share2,
+  Waypoints,
   Plus,
   Trash2,
   Code,
@@ -85,7 +85,7 @@ export function CommandPalette() {
       { id: "template", label: "Insert template", group: "Notes", icon: LayoutTemplate, action: () => setTemplatePickerOpen(true) },
       { id: "new-folder", label: "Create new folder", group: "Notes", icon: FolderPlus, action: () => createFolder() },
       { id: "daily-note", label: "Open today's daily note", group: "Notes", icon: Calendar, action: () => openDailyNote() },
-      { id: "graph", label: "Open graph view", group: "Views", icon: Share2, action: () => { setLeftPanel("graph"); setViewMode("graph"); } },
+      { id: "graph", label: "Open graph view", group: "Views", icon: Waypoints, action: () => { setLeftPanel("graph"); setViewMode("graph"); } },
       { id: "search", label: "Open search", group: "Views", icon: Search, action: () => setLeftPanel("search") },
       { id: "explorer", label: "Open file explorer", group: "Views", icon: FileText, action: () => setLeftPanel("explorer") },
       { id: "settings", label: "Open settings", group: "Views", icon: Settings, action: () => setLeftPanel("settings") },
@@ -231,11 +231,11 @@ export function CommandPalette() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 pt-[15vh]"
+      className="obs-modal-overlay fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[15vh]"
       onClick={() => setCommandPaletteOpen(false)}
     >
       <div
-        className="w-[520px] overflow-hidden rounded-lg border border-obs-border bg-obs-bg-secondary shadow-2xl"
+        className="obs-modal-panel overflow-hidden border border-obs-border bg-obs-bg-secondary shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 border-b border-obs-border px-4 py-3">
@@ -247,7 +247,7 @@ export function CommandPalette() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a command or search notes..."
-            className="w-full bg-transparent text-[14px] text-obs-text outline-none placeholder:text-obs-text-faint"
+            className="w-full bg-transparent text-[13px] text-obs-text outline-none placeholder:text-obs-text-faint"
           />
           <kbd className="rounded border border-obs-border px-1.5 py-0.5 text-[10px] text-obs-text-faint">
             esc
@@ -275,7 +275,7 @@ export function CommandPalette() {
                   className={cn(
                     "flex w-full items-center gap-3 px-4 py-2 text-left transition-colors",
                     index === selectedIndex
-                      ? "bg-obs-accent/20 text-obs-text"
+                      ? "bg-obs-interactive-hover text-obs-text"
                       : "text-obs-text-muted hover:bg-obs-interactive-hover"
                   )}
                   onClick={() => execute(item)}

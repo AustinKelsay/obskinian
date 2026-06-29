@@ -6,7 +6,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { PanelLeftClose, PanelRightClose } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, PanelRightOpen } from "lucide-react";
 import { Ribbon } from "./Ribbon";
 import { TabBar } from "./TabBar";
 import { StatusBar } from "./StatusBar";
@@ -109,7 +109,7 @@ export function AppShell() {
 
         {isMobile && (isLeftSidebarOpen || isRightSidebarOpen) && (
           <div
-            className="absolute inset-0 z-20 bg-black/50 md:hidden"
+            className="obs-modal-overlay absolute inset-0 z-20 md:hidden"
             onClick={() => {
               if (isLeftSidebarOpen) toggleLeftSidebar();
               if (isRightSidebarOpen) toggleRightSidebar();
@@ -120,6 +120,8 @@ export function AppShell() {
         {isLeftSidebarOpen && leftPanel !== "graph" && (
           <ResizablePanel
             side="left"
+            defaultWidth={260}
+            storageKey="obskinian-left-sidebar"
             className={cn(
               "z-30 border-r border-obs-border bg-obs-sidebar",
               isMobile && "absolute inset-y-0 left-[44px] shadow-xl"
@@ -135,24 +137,27 @@ export function AppShell() {
           <div className="flex h-[36px] shrink-0 items-center border-b border-obs-border bg-obs-bg-secondary">
             <button
               type="button"
-              title="Toggle left sidebar"
-              aria-label="Toggle left sidebar"
+              title={isLeftSidebarOpen ? "Hide left sidebar" : "Show left sidebar"}
+              aria-label={isLeftSidebarOpen ? "Hide left sidebar" : "Show left sidebar"}
               onClick={toggleLeftSidebar}
-              className="flex h-full w-9 items-center justify-center text-obs-text-muted transition-colors hover:bg-obs-interactive-hover hover:text-obs-text"
+              className="flex h-full w-9 items-center justify-center text-obs-text-muted transition-colors hover:bg-obs-interactive-hover hover:text-obs-text focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-[-1px] focus-visible:outline-obs-accent"
             >
-              <PanelLeftClose size={16} />
+              {isLeftSidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
             </button>
             {viewMode === "editor" && <TabBar />}
+            {viewMode === "graph" && (
+              <span className="px-2 text-[12px] text-obs-text-muted">Graph view</span>
+            )}
             <div className="flex-1" />
             {!isRightSidebarOpen && (
               <button
                 type="button"
-                title="Toggle right sidebar"
-                aria-label="Toggle right sidebar"
+                title="Show right sidebar"
+                aria-label="Show right sidebar"
                 onClick={toggleRightSidebar}
-                className="flex h-full w-9 items-center justify-center text-obs-text-muted transition-colors hover:bg-obs-interactive-hover hover:text-obs-text"
+                className="flex h-full w-9 items-center justify-center text-obs-text-muted transition-colors hover:bg-obs-interactive-hover hover:text-obs-text focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-[-1px] focus-visible:outline-obs-accent"
               >
-                <PanelRightClose size={16} />
+                <PanelRightOpen size={16} />
               </button>
             )}
           </div>
@@ -168,7 +173,20 @@ export function AppShell() {
           </div>
         </div>
 
-        <RightSidebar className={isMobile ? "absolute inset-y-0 right-0 z-30 shadow-xl" : undefined} />
+        {isRightSidebarOpen && (
+          <ResizablePanel
+            side="right"
+            defaultWidth={280}
+            minWidth={220}
+            storageKey="obskinian-right-sidebar"
+            className={cn(
+              "z-30 bg-obs-sidebar",
+              isMobile && "absolute inset-y-0 right-0 shadow-xl"
+            )}
+          >
+            <RightSidebar className="h-full w-full" />
+          </ResizablePanel>
+        )}
       </div>
 
       <StatusBar />
@@ -179,20 +197,19 @@ export function AppShell() {
 /** Shown when no note is open */
 function EmptyState({ onCreateNote }: { onCreateNote: () => void }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-obs-bg text-obs-text-muted">
-      <div className="text-6xl opacity-20">◇</div>
-      <div className="text-center">
-        <p className="text-lg font-medium text-obs-text">No note open</p>
-        <p className="mt-1 text-[13px] text-obs-text-faint">
-          Select a note from the file explorer, or press{" "}
-          <kbd className="rounded border border-obs-border px-1.5 py-0.5 text-[11px]">⌘P</kbd>{" "}
-          to open the command palette
-        </p>
-      </div>
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-obs-bg px-6 text-center">
+      <p className="text-[14px] text-obs-text-muted">No note is open.</p>
+      <p className="max-w-sm text-[13px] leading-relaxed text-obs-text-faint">
+        Open a note from the file explorer, or press{" "}
+        <kbd className="rounded-sm border border-obs-border px-1.5 py-0.5 text-[11px] text-obs-text-muted">
+          ⌘P
+        </kbd>{" "}
+        for the command palette.
+      </p>
       <button
         type="button"
         onClick={onCreateNote}
-        className="mt-2 rounded-md bg-obs-accent/20 px-4 py-2 text-[13px] text-obs-accent transition-colors hover:bg-obs-accent/30"
+        className="mt-1 rounded-sm bg-obs-interactive px-3 py-1.5 text-[13px] text-obs-text transition-colors hover:bg-obs-interactive-hover"
       >
         Create new note
       </button>

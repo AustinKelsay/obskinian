@@ -5,8 +5,9 @@
 
 "use client";
 
-import { Files, Search, Share2, Settings, HelpCircle } from "lucide-react";
+import { Files, Search, Waypoints, Settings, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ribbonBtnClass } from "@/lib/ui-classes";
 import type { LeftPanel } from "@/lib/vault/types";
 import { useVaultStore } from "@/lib/vault/vault-store";
 
@@ -42,7 +43,7 @@ export function Ribbon() {
     },
     {
       id: "graph",
-      icon: <Share2 size={18} strokeWidth={1.5} />,
+      icon: <Waypoints size={18} strokeWidth={1.5} />,
       label: "Graph view",
       action: () => {
         setLeftPanel("graph");
@@ -51,29 +52,34 @@ export function Ribbon() {
     },
   ];
 
+  function ribbonItemClass(isActive: boolean) {
+    return cn(
+      ribbonBtnClass,
+      isActive
+        ? "bg-obs-interactive-hover text-obs-text before:absolute before:inset-y-1 before:left-0 before:w-[2px] before:rounded-r before:bg-obs-accent"
+        : "text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
+    );
+  }
+
   return (
-    <div className="flex h-full w-[44px] shrink-0 flex-col items-center border-r border-obs-border bg-obs-ribbon py-2">
-      <div className="flex flex-1 flex-col items-center gap-1">
+    <div className="flex h-full w-[44px] shrink-0 flex-col items-center border-r border-obs-border bg-obs-ribbon py-1.5">
+      <div className="flex flex-1 flex-col items-center gap-0.5">
         {items.map((item) => (
           <button
             key={item.id}
             type="button"
             title={item.label}
             aria-label={item.label}
+            aria-current={leftPanel === item.id ? "page" : undefined}
             onClick={item.action}
-            className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-md transition-colors",
-              leftPanel === item.id
-                ? "bg-obs-accent/20 text-obs-accent"
-                : "text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
-            )}
+            className={ribbonItemClass(leftPanel === item.id)}
           >
             {item.icon}
           </button>
         ))}
       </div>
 
-      <div className="flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-0.5">
         <button
           type="button"
           title="Settings"
@@ -82,20 +88,16 @@ export function Ribbon() {
             setLeftPanel("settings");
             setViewMode("editor");
           }}
-          className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-md transition-colors",
-            leftPanel === "settings"
-              ? "bg-obs-accent/20 text-obs-accent"
-              : "text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
-          )}
+          className={ribbonItemClass(leftPanel === "settings")}
         >
           <Settings size={18} strokeWidth={1.5} />
         </button>
         <button
           type="button"
-          title="Help"
+          title="Help (coming soon)"
           aria-label="Help"
-          className="flex h-9 w-9 items-center justify-center rounded-md text-obs-text-muted transition-colors hover:bg-obs-interactive-hover hover:text-obs-text"
+          disabled
+          className={cn(ribbonBtnClass, "cursor-default text-obs-text-faint opacity-40")}
         >
           <HelpCircle size={18} strokeWidth={1.5} />
         </button>

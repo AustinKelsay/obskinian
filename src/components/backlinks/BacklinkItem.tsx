@@ -53,8 +53,8 @@ export function BacklinkItem({ fileName, context, onClick, onPromote }: Backlink
       {hovered && context && (
         <div
           className={cn(
-            "absolute right-full top-0 z-50 mr-2 w-[220px] rounded-md border border-obs-border",
-            "bg-obs-bg-secondary p-3 shadow-xl"
+            "pointer-events-none absolute left-3 right-3 top-full z-50 mt-1 rounded-sm border border-obs-border",
+            "max-h-[140px] overflow-y-auto bg-obs-bg-secondary p-2.5 shadow-lg"
           )}
         >
           <p className="mb-1 text-[11px] font-medium text-obs-accent">{fileName}</p>

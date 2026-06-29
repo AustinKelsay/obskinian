@@ -28,9 +28,9 @@ export function TabBar() {
             key={tab.id}
             draggable
             className={cn(
-              "group relative flex h-[34px] max-w-[200px] shrink-0 cursor-pointer items-center gap-1.5 border-r border-obs-border px-3 text-[13px] transition-colors",
+              "group relative flex h-[35px] max-w-[200px] shrink-0 cursor-pointer items-center gap-1.5 border-r border-obs-border px-3 text-[13px] transition-colors",
               isActive
-                ? "bg-obs-bg text-obs-text"
+                ? "-mb-px border-b border-obs-bg bg-obs-bg text-obs-text"
                 : "bg-obs-bg-secondary text-obs-text-muted hover:bg-obs-interactive hover:text-obs-text",
               tab.isPinned && "border-l-2 border-l-obs-accent/50",
               isDropTarget && "bg-obs-accent/10 ring-1 ring-inset ring-obs-accent/40"
@@ -55,33 +55,30 @@ export function TabBar() {
             role="tab"
             aria-selected={isActive}
           >
-            {isActive && (
-              <div className="absolute inset-x-0 top-0 h-[2px] bg-obs-accent" />
+            {tab.isPinned && (
+              <Pin size={10} className="shrink-0 text-obs-accent opacity-80" />
             )}
-            {tab.isPinned && <Pin size={10} className="shrink-0 text-obs-accent" />}
             <span className="truncate">{tab.fileName}</span>
-            <button
-              type="button"
-              aria-label={`Pin ${tab.fileName}`}
-              title="Pin tab"
-              className={cn(
-                "flex h-4 w-4 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100",
-                tab.isPinned && "opacity-60 text-obs-accent"
-              )}
-              onClick={(e) => {
-                e.stopPropagation();
-                pinTab(tab.id);
-              }}
-            >
-              <Pin size={10} />
-            </button>
+            {!tab.isPinned && (
+              <button
+                type="button"
+                aria-label={`Pin ${tab.fileName}`}
+                title="Pin tab"
+                className="flex h-4 w-4 shrink-0 items-center justify-center rounded-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-obs-interactive-hover"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  pinTab(tab.id);
+                }}
+              >
+                <Pin size={10} />
+              </button>
+            )}
             <button
               type="button"
               aria-label={`Close ${tab.fileName}`}
               className={cn(
-                "flex h-4 w-4 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100",
-                isActive && "opacity-60",
-                "hover:bg-obs-interactive-hover hover:opacity-100"
+                "flex h-4 w-4 shrink-0 items-center justify-center rounded-sm transition-opacity hover:bg-obs-interactive-hover",
+                isActive ? "opacity-70" : "opacity-0 group-hover:opacity-100"
               )}
               onClick={(e) => {
                 e.stopPropagation();

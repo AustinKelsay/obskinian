@@ -15,6 +15,17 @@ interface ResizablePanelProps {
   maxWidth?: number;
   side: "left" | "right";
   className?: string;
+  /** Persists width in localStorage when set */
+  storageKey?: string;
+}
+
+/** Reads stored sidebar width from localStorage */
+function readStoredWidth(storageKey: string | undefined, fallback: number): number {
+  if (typeof window === "undefined" || !storageKey) return fallback;
+  const stored = localStorage.getItem(storageKey);
+  if (!stored) return fallback;
+  const parsed = Number.parseInt(stored, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 /** Horizontally resizable sidebar panel */
@@ -25,11 +36,21 @@ export function ResizablePanel({
   maxWidth = 480,
   side,
   className,
+  storageKey,
 }: ResizablePanelProps) {
-  const [width, setWidth] = useState(defaultWidth);
+  const widthRef = useRef(defaultWidth);
+  const [width, setWidth] = useState(() => readStoredWidth(storageKey, defaultWidth));
   const dragging = useRef(false);
   const startX = useRef(0);
   const startWidth = useRef(defaultWidth);
+
+  const persistWidth = useCallback(
+    (value: number) => {
+      if (!storageKey || typeof window === "undefined") return;
+      localStorage.setItem(storageKey, String(Math.round(value)));
+    },
+    [storageKey]
+  );
 
   const onMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -47,16 +68,19 @@ export function ResizablePanel({
       if (!dragging.current) return;
       const delta = side === "left" ? e.clientX - startX.current : startX.current - e.clientX;
       const next = Math.min(maxWidth, Math.max(minWidth, startWidth.current + delta));
+      widthRef.current = next;
       setWidth(next);
     },
     [side, minWidth, maxWidth]
   );
 
   const onMouseUp = useCallback(() => {
+    if (!dragging.current) return;
     dragging.current = false;
     document.body.style.cursor = "";
     document.body.style.userSelect = "";
-  }, []);
+    persistWidth(widthRef.current);
+  }, [persistWidth]);
 
   useEffect(() => {
     window.addEventListener("mousemove", onMouseMove);
@@ -72,8 +96,8 @@ export function ResizablePanel({
       {children}
       <div
         className={cn(
-          "absolute top-0 z-10 h-full w-1 cursor-col-resize transition-colors hover:bg-obs-accent/40",
-          side === "left" ? "right-0" : "left-0"
+          "absolute top-0 z-10 h-full w-1 cursor-col-resize bg-obs-border/60 transition-colors hover:bg-obs-accent/50",
+          side === "left" ? "-right-0.5" : "-left-0.5"
         )}
         onMouseDown={onMouseDown}
       />

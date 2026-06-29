@@ -99,6 +99,13 @@ A **skin-deep front-end clone** of [Obsidian](https://obsidian.md) — built as 
 - **Line numbers** — gutter in source and split modes for easier navigation
 - **Export pipeline** — HTML export uses the same remark/KaTeX renderer as reading mode
 
+### UI polish
+- **Obsidian-accurate chrome** — flat ribbon with left accent bar, icon-rail right sidebar, resizable panels
+- **Unified panel typography** — consistent headers, empty states, and list row hover across all panels
+- **Theme-aware graph** — node/link colors follow accent and theme CSS variables
+- **Tab bar fidelity** — active tab connects to editor surface; pinned tabs show persistent pin icon
+- **Responsive modals** — command palette and template picker adapt to narrow viewports
+
 ## Getting Started
 
 ```bash

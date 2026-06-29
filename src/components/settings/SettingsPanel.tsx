@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import { Puzzle, Calendar, Clock, Palette, Sun, Moon, Code2, Layout } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { panelHeaderClass, panelTitleClass } from "@/lib/ui-classes";
 import {
   loadPreferences,
   savePreferences,
@@ -32,10 +33,8 @@ export function SettingsPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-[36px] shrink-0 items-center border-b border-obs-border px-3">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-obs-text-muted">
-          Settings
-        </span>
+      <div className={panelHeaderClass}>
+        <span className={panelTitleClass}>Settings</span>
       </div>
 
       <div className="flex-1 overflow-y-auto">
