@@ -14,12 +14,14 @@ import { RightSidebar } from "./RightSidebar";
 import { ResizablePanel } from "./ResizablePanel";
 import { FileExplorer } from "@/components/explorer/FileExplorer";
 import { SearchPanel } from "@/components/search/SearchPanel";
+import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import { GraphView } from "@/components/graph/GraphView";
 import { EditorArea } from "@/components/editor/EditorArea";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { useVaultStore, initializeVault } from "@/lib/vault/vault-store";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { registerBuiltinPlugins } from "@/lib/plugins/registry";
+import { openDailyNote } from "@/lib/plugins/daily-notes";
 
 /** Root layout shell matching Obsidian's workspace structure */
 export function AppShell() {
@@ -67,6 +69,7 @@ export function AppShell() {
         setViewMode("graph");
       },
       onToggleSearch: () => setLeftPanel("search"),
+      onDailyNote: () => openDailyNote(),
     }),
     [
       setCommandPaletteOpen,
@@ -94,6 +97,7 @@ export function AppShell() {
           <ResizablePanel side="left" className="border-r border-obs-border bg-obs-sidebar">
             {leftPanel === "explorer" && <FileExplorer />}
             {leftPanel === "search" && <SearchPanel />}
+            {leftPanel === "settings" && <SettingsPanel />}
           </ResizablePanel>
         )}
 

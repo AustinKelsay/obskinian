@@ -11,7 +11,7 @@ import { FileTreeItem } from "./FileTreeItem";
 
 /** Left sidebar file explorer panel */
 export function FileExplorer() {
-  const { vault, createNote } = useVaultStore();
+  const { vault, createNote, createFolder, collapseAllFolders } = useVaultStore();
 
   return (
     <div className="flex h-full flex-col">
@@ -33,6 +33,7 @@ export function FileExplorer() {
             type="button"
             title="New folder"
             aria-label="New folder"
+            onClick={() => createFolder()}
             className="flex h-6 w-6 items-center justify-center rounded text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
           >
             <FolderPlus size={14} />
@@ -41,6 +42,7 @@ export function FileExplorer() {
             type="button"
             title="Collapse all"
             aria-label="Collapse all"
+            onClick={() => collapseAllFolders()}
             className="flex h-6 w-6 items-center justify-center rounded text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
           >
             <ChevronsDownUp size={14} />

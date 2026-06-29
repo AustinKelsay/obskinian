@@ -1,6 +1,6 @@
 /**
  * Left vertical ribbon matching Obsidian's icon navigation bar.
- * Switches between explorer, search, and graph panels.
+ * Switches between explorer, search, graph, and settings panels.
  */
 
 "use client";
@@ -11,7 +11,7 @@ import type { LeftPanel } from "@/lib/vault/types";
 import { useVaultStore } from "@/lib/vault/vault-store";
 
 interface RibbonItem {
-  id: LeftPanel | "settings" | "help";
+  id: LeftPanel;
   icon: React.ReactNode;
   label: string;
   action?: () => void;
@@ -19,7 +19,7 @@ interface RibbonItem {
 
 /** Vertical icon ribbon on the far left of the app shell */
 export function Ribbon() {
-  const { leftPanel, setLeftPanel, setViewMode, setCommandPaletteOpen } = useVaultStore();
+  const { leftPanel, setLeftPanel, setViewMode } = useVaultStore();
 
   const items: RibbonItem[] = [
     {
@@ -76,10 +76,18 @@ export function Ribbon() {
       <div className="flex flex-col items-center gap-1">
         <button
           type="button"
-          title="Command palette"
-          aria-label="Command palette"
-          onClick={() => setCommandPaletteOpen(true)}
-          className="flex h-9 w-9 items-center justify-center rounded-md text-obs-text-muted transition-colors hover:bg-obs-interactive-hover hover:text-obs-text"
+          title="Settings"
+          aria-label="Settings"
+          onClick={() => {
+            setLeftPanel("settings");
+            setViewMode("editor");
+          }}
+          className={cn(
+            "flex h-9 w-9 items-center justify-center rounded-md transition-colors",
+            leftPanel === "settings"
+              ? "bg-obs-accent/20 text-obs-accent"
+              : "text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
+          )}
         >
           <Settings size={18} strokeWidth={1.5} />
         </button>

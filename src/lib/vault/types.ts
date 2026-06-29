@@ -39,7 +39,7 @@ export interface EditorTab {
 }
 
 /** Sidebar panel identifiers matching Obsidian's left ribbon */
-export type LeftPanel = "explorer" | "search" | "graph" | "none";
+export type LeftPanel = "explorer" | "search" | "graph" | "settings" | "none";
 
 /** Right sidebar panel identifiers */
 export type RightPanel = "outline" | "backlinks" | "tags" | "none";

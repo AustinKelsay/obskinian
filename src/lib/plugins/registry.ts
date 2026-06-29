@@ -101,12 +101,17 @@ export function registerBuiltinPlugins(): void {
     id: "daily-notes",
     name: "Daily Notes",
     version: "1.0.0",
-    description: "Daily note templates and navigation",
+    description: "Create and open daily notes with configurable folder",
     author: "Obskinian",
-    hooks: {
-      onVaultLoad: () => {
-        /* scaffold for daily notes auto-open */
-      },
+  });
+
+  pluginRegistry.registerCommand({
+    id: "open-daily-note",
+    label: "Open today's daily note",
+    group: "Notes",
+    shortcut: "⌘D",
+    action: () => {
+      import("@/lib/plugins/daily-notes").then((m) => m.openDailyNote());
     },
   });
 }
