@@ -14,6 +14,7 @@ import {
   extractTags,
   findLinkedBacklinks,
   findUnlinkedMentions,
+  extractLinkFromContext,
 } from "@/lib/vault/link-parser";
 import { BacklinkItem } from "@/components/backlinks/BacklinkItem";
 import { PropertiesPanel } from "@/components/properties/PropertiesPanel";
@@ -28,6 +29,7 @@ export function RightSidebar({ className }: { className?: string }) {
     getActiveFile,
     getAllFiles,
     openFile,
+    openFileByLink,
     setLeftPanel,
     setSearchQuery,
     scrollToHeading,
@@ -127,7 +129,11 @@ export function RightSidebar({ className }: { className?: string }) {
                     key={`linked-${bl.fileId}`}
                     fileName={bl.fileName}
                     context={bl.context}
-                    onClick={() => openFile(bl.fileId)}
+                    onClick={() => {
+                      const link = extractLinkFromContext(bl.context, activeFile!.name);
+                      if (link) openFileByLink(link);
+                      else openFile(bl.fileId);
+                    }}
                   />
                 ))}
               </>

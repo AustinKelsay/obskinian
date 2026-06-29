@@ -1,10 +1,10 @@
 # Graph View
 
-The **Graph View** visualizes connections between your notes. Each node represents a note, and edges represent `[[wiki-links]]`.
+The **Graph View** visualizes connections between your notes. Each node represents a note. Solid edges are `[[wiki-links]]`; dashed edges are `![[embeds]]`.
 
 ## How It Works
 
-When you create a link like `[[Knowledge Graph Theory]]`, Obsidian draws a connection between the two notes in the graph.
+When you create a link like `[[Knowledge Graph Theory]]`, Obsidian draws a connection between the two notes in the graph. Embedding a note with `![[Welcome]]` creates a dashed embed edge.
 
 ## Graph Controls
 

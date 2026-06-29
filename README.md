@@ -71,6 +71,14 @@ A **skin-deep front-end clone** of [Obsidian](https://obsidian.md) — built as 
 - **Linked vs unlinked mentions** — backlinks panel splits wiki-links from plain-text references
 - **Heading links** — `[[Note#Heading]]` navigates and scrolls to the target heading
 
+### Phase 8
+- **Block references** — `^block-id` anchors and `[[Note#^block-id]]` navigation
+- **Embed graph edges** — dashed lines in graph view for transclusion links
+- **Image embeds** — `![[attachments/image.png]]` rendered from vault assets
+- **Wiki-link fragments** — heading and block subpaths preserved on click in live preview
+- **Slash commands** — `/callout`, `/embed`, `/blockid` for quick insertion
+- **Alias round-trip** — `[[target|alias]]` preserved through WYSIWYG editing
+
 ## Getting Started
 
 ```bash

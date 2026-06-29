@@ -28,7 +28,9 @@ interface SourceEditorProps {
 export function SourceEditor({ fileId, content, frontmatter = {} }: SourceEditorProps) {
   const updateFileRaw = useVaultStore((s) => s.updateFileRaw);
   const scrollToHeadingId = useVaultStore((s) => s.scrollToHeadingId);
+  const scrollToBlockId = useVaultStore((s) => s.scrollToBlockId);
   const clearScrollToHeading = useVaultStore((s) => s.clearScrollToHeading);
+  const clearScrollToBlock = useVaultStore((s) => s.clearScrollToBlock);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -64,6 +66,17 @@ export function SourceEditor({ fileId, content, frontmatter = {} }: SourceEditor
     }
     clearScrollToHeading();
   }, [scrollToHeadingId, content, clearScrollToHeading]);
+
+  useEffect(() => {
+    if (!scrollToBlockId || !textareaRef.current) return;
+    const blockSuffix = scrollToBlockId.replace(/^\^/, "");
+    const lines = rawContent.split("\n");
+    const idx = lines.findIndex((line) => new RegExp(`\\^${blockSuffix}\\s*$`).test(line));
+    if (idx >= 0) {
+      textareaRef.current.scrollTop = idx * 20;
+    }
+    clearScrollToBlock();
+  }, [scrollToBlockId, rawContent, clearScrollToBlock]);
 
   useEffect(() => {
     setSlashIndex(0);

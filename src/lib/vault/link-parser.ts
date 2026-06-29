@@ -10,9 +10,51 @@ export interface MarkdownToHtmlOptions {
   resolveEmbed?: (target: string) => string | null;
 }
 
-/** Strips heading/block suffix from wiki-link targets */
+export interface ParsedWikiTarget {
+  note: string;
+  subpath?: string;
+}
+
+const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|bmp)$/i;
+
+/** Strips heading/block suffix from wiki-link targets for note resolution */
 export function normalizeLinkTarget(link: string): string {
-  return link.split("#")[0].split("^")[0].trim();
+  const hashIdx = link.indexOf("#");
+  const base = hashIdx >= 0 ? link.slice(0, hashIdx) : link;
+  return base.split("^")[0].trim();
+}
+
+/** Parses a wiki-link target into note name and optional subpath (heading or block) */
+export function parseWikiLinkTarget(link: string): ParsedWikiTarget {
+  const hashIdx = link.indexOf("#");
+  if (hashIdx < 0) return { note: link.trim() };
+  return {
+    note: link.slice(0, hashIdx).trim(),
+    subpath: link.slice(hashIdx + 1),
+  };
+}
+
+/** Returns true when subpath is a block reference (^block-id) */
+export function isBlockSubpath(subpath: string): boolean {
+  return subpath.startsWith("^");
+}
+
+/** Returns true when embed target is an image file */
+export function isImageEmbed(target: string): boolean {
+  const { note } = parseWikiLinkTarget(target);
+  return IMAGE_EXT.test(note);
+}
+
+/** Builds vault asset URL for an image path */
+export function vaultAssetUrl(relativePath: string): string {
+  return `/api/vault/asset?path=${encodeURIComponent(relativePath)}`;
+}
+
+/** Extracts block id suffix from a markdown line, if present */
+export function stripBlockIdSuffix(line: string): { text: string; blockId?: string } {
+  const match = line.match(/^(.*?)\s+\^([a-zA-Z][\w-]*)\s*$/);
+  if (!match) return { text: line };
+  return { text: match[1], blockId: `^${match[2]}` };
 }
 
 /** Extracts all [[wiki-link]] targets from markdown content (excludes embeds) */
@@ -26,13 +68,14 @@ export function extractWikiLinks(content: string): string[] {
   return links;
 }
 
-/** Extracts all ![[wiki-embed]] targets from markdown content */
+/** Extracts all ![[wiki-embed]] targets from markdown content (notes only) */
 export function extractWikiEmbeds(content: string): string[] {
   const embeds: string[] = [];
   const regex = /!\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g;
   let match: RegExpExecArray | null;
   while ((match = regex.exec(content)) !== null) {
-    embeds.push(normalizeLinkTarget(match[1]));
+    const target = normalizeLinkTarget(match[1]);
+    if (!isImageEmbed(match[1])) embeds.push(target);
   }
   return embeds;
 }
@@ -47,7 +90,8 @@ export function extractHeadings(content: string): { level: number; text: string;
   const headings: { level: number; text: string; id: string }[] = [];
   const lines = content.split("\n");
   for (const line of lines) {
-    const match = line.match(/^(#{1,6})\s+(.+)$/);
+    const { text: stripped } = stripBlockIdSuffix(line);
+    const match = stripped.match(/^(#{1,6})\s+(.+)$/);
     if (match) {
       const level = match[1].length;
       const text = match[2].replace(/\[\[|\]\]/g, "").trim();
@@ -132,12 +176,17 @@ export function markdownToHtml(md: string, options?: MarkdownToHtmlOptions): str
     return `<pre><code${langAttr}>${escapeHtml(code.trim())}</code></pre>`;
   });
 
-  html = html.replace(/^######\s+(.+)$/gm, (_, t) => `<h6 id="${headingToId(t)}">${t}</h6>`);
-  html = html.replace(/^#####\s+(.+)$/gm, (_, t) => `<h5 id="${headingToId(t)}">${t}</h5>`);
-  html = html.replace(/^####\s+(.+)$/gm, (_, t) => `<h4 id="${headingToId(t)}">${t}</h4>`);
-  html = html.replace(/^###\s+(.+)$/gm, (_, t) => `<h3 id="${headingToId(t)}">${t}</h3>`);
-  html = html.replace(/^##\s+(.+)$/gm, (_, t) => `<h2 id="${headingToId(t)}">${t}</h2>`);
-  html = html.replace(/^#\s+(.+)$/gm, (_, t) => `<h1 id="${headingToId(t)}">${t}</h1>`);
+  const headingHtml = (level: number, t: string, bid?: string) => {
+    const id = bid ? `^${bid}` : headingToId(t);
+    return `<h${level} id="${id}">${t.trim()}</h${level}>`;
+  };
+
+  html = html.replace(/^######\s+(.+?)(?:\s+\^([a-zA-Z][\w-]*))?\s*$/gm, (_, t, bid) => headingHtml(6, t, bid));
+  html = html.replace(/^#####\s+(.+?)(?:\s+\^([a-zA-Z][\w-]*))?\s*$/gm, (_, t, bid) => headingHtml(5, t, bid));
+  html = html.replace(/^####\s+(.+?)(?:\s+\^([a-zA-Z][\w-]*))?\s*$/gm, (_, t, bid) => headingHtml(4, t, bid));
+  html = html.replace(/^###\s+(.+?)(?:\s+\^([a-zA-Z][\w-]*))?\s*$/gm, (_, t, bid) => headingHtml(3, t, bid));
+  html = html.replace(/^##\s+(.+?)(?:\s+\^([a-zA-Z][\w-]*))?\s*$/gm, (_, t, bid) => headingHtml(2, t, bid));
+  html = html.replace(/^#\s+(.+?)(?:\s+\^([a-zA-Z][\w-]*))?\s*$/gm, (_, t, bid) => headingHtml(1, t, bid));
 
   html = html.replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>");
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
@@ -148,13 +197,22 @@ export function markdownToHtml(md: string, options?: MarkdownToHtmlOptions): str
     /!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
     (_, target) => {
       const trimmed = target.trim();
-      const preview = options?.resolveEmbed?.(trimmed);
+      if (isImageEmbed(trimmed)) {
+        const { note } = parseWikiLinkTarget(trimmed);
+        return (
+          `<img class="wiki-image" src="${vaultAssetUrl(note)}" ` +
+            `alt="${escapeHtml(note)}" data-path="${escapeHtml(note)}" contenteditable="false" />`
+        );
+      }
+      const { note, subpath } = parseWikiLinkTarget(trimmed);
+      const lookupTarget = subpath ? `${note}#${subpath}` : note;
+      const preview = options?.resolveEmbed?.(lookupTarget) ?? options?.resolveEmbed?.(note);
       const previewText = preview
         ? escapeHtml(preview.slice(0, 280))
         : '<span class="wiki-embed-missing">Note not found</span>';
       return (
         `<div class="wiki-embed" data-target="${escapeHtml(trimmed)}" contenteditable="false">` +
-          `<div class="wiki-embed-header">${escapeHtml(trimmed)}</div>` +
+          `<div class="wiki-embed-header">${escapeHtml(note)}</div>` +
           `<div class="wiki-embed-body">${previewText}</div>` +
           `</div>`
       );
@@ -163,8 +221,15 @@ export function markdownToHtml(md: string, options?: MarkdownToHtmlOptions): str
 
   html = html.replace(
     /(?<!!)\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
-    (_, target, alias) =>
-      `<span class="wiki-link" data-target="${escapeHtml(normalizeLinkTarget(target))}">${escapeHtml(alias ?? target.trim())}</span>`
+    (_, target, alias) => {
+      const fullTarget = target.trim();
+      const display = alias ?? fullTarget;
+      const aliasAttr = alias ? ` data-alias="${escapeHtml(alias)}"` : "";
+      return (
+        `<span class="wiki-link" data-target="${escapeHtml(fullTarget)}"${aliasAttr}>` +
+          `${escapeHtml(display)}</span>`
+      );
+    }
   );
 
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
@@ -173,15 +238,24 @@ export function markdownToHtml(md: string, options?: MarkdownToHtmlOptions): str
   html = html.replace(/^---$/gm, "<hr>");
 
   html = html.replace(
-    /^-\s+\[ \]\s+(.+)$/gm,
-    '<ul data-type="taskList"><li data-type="taskItem" data-checked="false"><label><input type="checkbox"><span></span></label><div><p>$1</p></div></li></ul>'
+    /^-\s+\[ \]\s+(.+?)(?:\s+\^([a-zA-Z][\w-]*))?\s*$/gm,
+    (_, t, bid) => {
+      const idAttr = bid ? ` id="^${bid}"` : "";
+      return `<ul data-type="taskList"><li data-type="taskItem" data-checked="false"${idAttr}><label><input type="checkbox"><span></span></label><div><p>${t}</p></div></li></ul>`;
+    }
   );
   html = html.replace(
-    /^-\s+\[x\]\s+(.+)$/gm,
-    '<ul data-type="taskList"><li data-type="taskItem" data-checked="true"><label><input type="checkbox" checked><span></span></label><div><p>$1</p></div></li></ul>'
+    /^-\s+\[x\]\s+(.+?)(?:\s+\^([a-zA-Z][\w-]*))?\s*$/gm,
+    (_, t, bid) => {
+      const idAttr = bid ? ` id="^${bid}"` : "";
+      return `<ul data-type="taskList"><li data-type="taskItem" data-checked="true"${idAttr}><label><input type="checkbox" checked><span></span></label><div><p>${t}</p></div></li></ul>`;
+    }
   );
 
-  html = html.replace(/^-\s+(.+)$/gm, "<li>$1</li>");
+  html = html.replace(/^-\s+(.+?)(?:\s+\^([a-zA-Z][\w-]*))?\s*$/gm, (_, t, bid) => {
+    const idAttr = bid ? ` id="^${bid}"` : "";
+    return `<li${idAttr}>${t}</li>`;
+  });
   html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`);
 
   const lines = html.split("\n");
@@ -189,7 +263,12 @@ export function markdownToHtml(md: string, options?: MarkdownToHtmlOptions): str
     .map((line) => {
       const trimmed = line.trim();
       if (!trimmed) return "";
-      if (/^<(h[1-6]|ul|ol|li|blockquote|pre|hr|p|div)/.test(trimmed)) return line;
+      if (/^<(h[1-6]|ul|ol|li|blockquote|pre|hr|p|div|img)/.test(trimmed)) return line;
+
+      const blockMatch = trimmed.match(/^(.+?)\s+\^([a-zA-Z][\w-]*)\s*$/);
+      if (blockMatch) {
+        return `<p id="^${blockMatch[2]}">${blockMatch[1]}</p>`;
+      }
       return `<p>${line}</p>`;
     })
     .filter(Boolean)
@@ -198,20 +277,46 @@ export function markdownToHtml(md: string, options?: MarkdownToHtmlOptions): str
   return html;
 }
 
-/** Finds linked backlinks — notes with [[wiki-links]] to the target */
+/** Resolves note id from link target using name map */
+export function resolveNoteId(
+  target: string,
+  nameToId: Map<string, string>
+): string | undefined {
+  const normalized = normalizeLinkTarget(target).toLowerCase();
+  return (
+    nameToId.get(normalized) ??
+    nameToId.get(normalized.replace(/\.md$/, ""))
+  );
+}
+
+/** Finds linked backlinks — notes with [[wiki-links]] or ![[embeds]] to the target */
 export function findLinkedBacklinks(
   noteName: string,
   allNotes: { id: string; path: string; name: string; content: string }[]
 ): BacklinkEntry[] {
   const results: BacklinkEntry[] = [];
   const target = noteName.replace(/\.md$/, "");
+  const seen = new Set<string>();
 
   for (const note of allNotes) {
     if (note.name.replace(/\.md$/, "") === target) continue;
-    const links = extractWikiLinks(note.content);
-    if (links.some((l) => l.toLowerCase() === target.toLowerCase())) {
+
+    const hasLink = extractWikiLinks(note.content).some(
+      (l) => l.toLowerCase() === target.toLowerCase()
+    );
+    const hasEmbed = extractWikiEmbeds(note.content).some(
+      (l) => l.toLowerCase() === target.toLowerCase()
+    );
+
+    if (hasLink || hasEmbed) {
+      if (seen.has(note.id)) continue;
+      seen.add(note.id);
+
       const contextLine =
-        note.content.split("\n").find((l) => l.includes(`[[${target}`)) ?? "";
+        note.content.split("\n").find(
+          (l) => l.includes(`[[${target}`) || l.includes(`![[${target}`)
+        ) ?? "";
+
       results.push({
         fileId: note.id,
         filePath: note.path,
@@ -236,12 +341,15 @@ export function findUnlinkedMentions(
   for (const note of allNotes) {
     if (note.name.replace(/\.md$/, "").toLowerCase() === target.toLowerCase()) continue;
 
-    const linkedTargets = extractWikiLinks(note.content).map((l) => l.toLowerCase());
+    const linkedTargets = [
+      ...extractWikiLinks(note.content),
+      ...extractWikiEmbeds(note.content),
+    ].map((l) => l.toLowerCase());
     if (linkedTargets.includes(target.toLowerCase())) continue;
 
     const mentionLine = note.content.split("\n").find((line) => {
       if (!pattern.test(line)) return false;
-      if (line.includes(`[[${target}`)) return false;
+      if (line.includes(`[[${target}`) || line.includes(`![[${target}`)) return false;
       return true;
     });
 
@@ -278,4 +386,18 @@ export function buildEmbedPreview(body: string): string {
     return trimmed.replace(/\[\[|\]\]/g, "").replace(/[#*`]/g, "").trim();
   }
   return lines.find((l) => l.trim())?.trim() ?? "";
+}
+
+/** Extracts link target from a backlink context line for navigation */
+export function extractLinkFromContext(context: string, noteName: string): string | null {
+  const target = noteName.replace(/\.md$/, "");
+  const wikiMatch = context.match(/\[\[([^\]|]+(?:#[^\]|]+)?)(?:\|[^\]]+)?\]\]/);
+  if (wikiMatch && normalizeLinkTarget(wikiMatch[1]).toLowerCase() === target.toLowerCase()) {
+    return wikiMatch[1];
+  }
+  const embedMatch = context.match(/!\[\[([^\]|]+(?:#[^\]|]+)?)(?:\|[^\]]+)?\]\]/);
+  if (embedMatch && normalizeLinkTarget(embedMatch[1]).toLowerCase() === target.toLowerCase()) {
+    return embedMatch[1];
+  }
+  return null;
 }

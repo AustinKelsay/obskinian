@@ -34,7 +34,7 @@ import {
   updateFileFields,
   updateFileFrontmatter,
 } from "./vault-data";
-import { extractWikiLinks, normalizeLinkTarget } from "./link-parser";
+import { extractWikiLinks, extractWikiEmbeds, parseWikiLinkTarget, isBlockSubpath, resolveNoteId } from "./link-parser";
 import { serializeNote, parseNote } from "./frontmatter";
 import type { FrontmatterValue } from "./frontmatter";
 import { filterGraphByMode, filterGraphByText } from "./graph-utils";
@@ -90,6 +90,7 @@ interface VaultStore {
   templateTargetFolder: string | null;
   recentFileIds: string[];
   scrollToHeadingId: string | null;
+  scrollToBlockId: string | null;
   dragItemId: string | null;
 
   loadVault: () => Promise<void>;
@@ -122,6 +123,8 @@ interface VaultStore {
   setTemplatePickerOpen: (open: boolean, targetFolder?: string | null) => void;
   scrollToHeading: (headingId: string) => void;
   clearScrollToHeading: () => void;
+  scrollToBlock: (blockId: string) => void;
+  clearScrollToBlock: () => void;
   setDragItemId: (id: string | null) => void;
   setPaneEditorMode: (paneId: string, mode: EditorMode) => void;
   setActivePane: (paneId: string) => void;
@@ -169,6 +172,7 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   templateTargetFolder: null,
   recentFileIds: [],
   scrollToHeadingId: null,
+  scrollToBlockId: null,
   dragItemId: null,
 
   loadVault: async () => {
@@ -227,20 +231,25 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   },
 
   openFileByLink: (link: string) => {
-    const headingMatch = link.match(/#(.+)$/);
-    const linkTarget = normalizeLinkTarget(link);
-    const file = findFileByLink(get().vault, linkTarget);
-    if (file) {
-      get().openFile(file.id);
-      if (headingMatch) {
-        const headingSlug = headingMatch[1]
-          .replace(/\[\[|\]\]/g, "")
-          .trim()
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-");
-        get().scrollToHeading(headingSlug);
-      }
+    const { note, subpath } = parseWikiLinkTarget(link);
+    const file = findFileByLink(get().vault, note);
+    if (!file) return;
+
+    get().openFile(file.id);
+
+    if (!subpath) return;
+
+    if (isBlockSubpath(subpath)) {
+      get().scrollToBlock(subpath);
+      return;
     }
+
+    const headingSlug = subpath
+      .replace(/\[\[|\]\]/g, "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-");
+    get().scrollToHeading(headingSlug);
   },
 
   closeTab: (tabId: string) => {
@@ -625,8 +634,10 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   setCommandPaletteOpen: (open: boolean) => set({ isCommandPaletteOpen: open }),
   setTemplatePickerOpen: (open, targetFolder = null) =>
     set({ isTemplatePickerOpen: open, templateTargetFolder: targetFolder }),
-  scrollToHeading: (headingId: string) => set({ scrollToHeadingId: headingId }),
+  scrollToHeading: (headingId: string) => set({ scrollToHeadingId: headingId, scrollToBlockId: null }),
   clearScrollToHeading: () => set({ scrollToHeadingId: null }),
+  scrollToBlock: (blockId: string) => set({ scrollToBlockId: blockId, scrollToHeadingId: null }),
+  clearScrollToBlock: () => set({ scrollToBlockId: null }),
   setDragItemId: (id: string | null) => set({ dragItemId: id }),
 
   setPaneEditorMode: (paneId: string, mode: EditorMode) => {
@@ -685,7 +696,7 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
       id: f.id,
       name: getFileDisplayName(f.path),
       path: f.path,
-      val: 1 + extractWikiLinks(f.content).length * 0.5,
+      val: 1 + extractWikiLinks(f.content).length * 0.5 + extractWikiEmbeds(f.content).length * 0.4,
     }));
 
     const nameToId = new Map<string, string>();
@@ -697,19 +708,21 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
     const links: GraphLink[] = [];
     const seen = new Set<string>();
 
+    function addEdge(sourceId: string, targetName: string, kind: "link" | "embed") {
+      const targetId = resolveNoteId(targetName, nameToId);
+      if (!targetId || targetId === sourceId) return;
+      const key = `${kind}:${[sourceId, targetId].sort().join("-")}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      links.push({ source: sourceId, target: targetId, kind });
+    }
+
     for (const file of files) {
       for (const link of extractWikiLinks(file.content)) {
-        const targetId =
-          nameToId.get(link.toLowerCase()) ??
-          nameToId.get(link.replace(/\.md$/, "").toLowerCase());
-
-        if (targetId && targetId !== file.id) {
-          const key = [file.id, targetId].sort().join("-");
-          if (!seen.has(key)) {
-            seen.add(key);
-            links.push({ source: file.id, target: targetId });
-          }
-        }
+        addEdge(file.id, link, "link");
+      }
+      for (const embed of extractWikiEmbeds(file.content)) {
+        addEdge(file.id, embed, "embed");
       }
     }
 

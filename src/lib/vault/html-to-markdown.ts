@@ -34,19 +34,23 @@ function serializeNode(node: ChildNode): string {
 
   switch (tag) {
     case "h1":
-      return `# ${children}`;
+      return serializeHeading(el, 1);
     case "h2":
-      return `## ${children}`;
+      return serializeHeading(el, 2);
     case "h3":
-      return `### ${children}`;
+      return serializeHeading(el, 3);
     case "h4":
-      return `#### ${children}`;
+      return serializeHeading(el, 4);
     case "h5":
-      return `##### ${children}`;
+      return serializeHeading(el, 5);
     case "h6":
-      return `###### ${children}`;
-    case "p":
-      return children;
+      return serializeHeading(el, 6);
+    case "p": {
+      const blockId = el.getAttribute("id");
+      const text = children;
+      if (blockId?.startsWith("^")) return `${text} ${blockId}`;
+      return text;
+    }
     case "strong":
     case "b":
       return `**${children}**`;
@@ -93,7 +97,15 @@ function serializeNode(node: ChildNode): string {
     case "span":
       if (el.classList.contains("wiki-link")) {
         const target = el.getAttribute("data-target") ?? children;
+        const alias = el.getAttribute("data-alias");
+        if (alias) return `[[${target}|${alias}]]`;
         return `[[${target}]]`;
+      }
+      return children;
+    case "img":
+      if (el.classList.contains("wiki-image")) {
+        const assetPath = el.getAttribute("data-path") ?? el.getAttribute("alt") ?? "";
+        return `![[${assetPath}]]`;
       }
       return children;
     case "ul":
@@ -104,10 +116,27 @@ function serializeNode(node: ChildNode): string {
     case "ol":
       return serializeListItems(el, "1.");
     case "li":
-      return `- ${serializeInline(el.childNodes)}`;
+      return serializeListItem(el);
     default:
       return serializeNodes(el.childNodes);
   }
+}
+
+/** Serializes a heading, preserving block id suffix if present */
+function serializeHeading(el: HTMLElement, level: number): string {
+  const marks = "#".repeat(level);
+  const blockId = el.getAttribute("id");
+  const text = serializeInline(el.childNodes);
+  if (blockId?.startsWith("^")) return `${marks} ${text} ${blockId}`;
+  return `${marks} ${text}`;
+}
+
+/** Serializes a list item with optional block id */
+function serializeListItem(li: HTMLElement): string {
+  const blockId = li.getAttribute("id");
+  const text = serializeInline(li.childNodes);
+  if (blockId?.startsWith("^")) return `- ${text} ${blockId}`;
+  return `- ${text}`;
 }
 
 /** Serializes inline child nodes */

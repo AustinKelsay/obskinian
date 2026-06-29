@@ -24,6 +24,12 @@ Obsidian stores your notes in a **vault** — a folder of plain-text Markdown fi
 > [!info] Transclusion
 > Notes can embed other notes inline: ![[Graph View]]
 
+This paragraph has a block reference anchor. ^welcome-block
+
+Jump here via [[Welcome#^welcome-block]] or [[Welcome#Getting Started]].
+
+![[attachments/logo.svg]]
+
 ## Quick Links
 
 Explore these connected notes:

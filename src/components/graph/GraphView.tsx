@@ -144,8 +144,15 @@ export function GraphView() {
               return "#666666";
             }}
             nodeRelSize={6}
-            linkColor={() => "rgba(127, 109, 242, 0.3)"}
-            linkWidth={1}
+            linkColor={(link) =>
+              (link as { kind?: string }).kind === "embed"
+                ? "rgba(127, 109, 242, 0.2)"
+                : "rgba(127, 109, 242, 0.4)"
+            }
+            linkWidth={(link) => ((link as { kind?: string }).kind === "embed" ? 1 : 1.5)}
+            linkLineDash={(link) =>
+              (link as { kind?: string }).kind === "embed" ? [4, 3] : null
+            }
             nodeCanvasObject={(node, ctx, globalScale) => {
               const label = (node.name as string) ?? "";
               const fontSize = 12 / globalScale;

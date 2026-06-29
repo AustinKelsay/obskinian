@@ -29,7 +29,7 @@ import {
   Link as LinkIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { markdownToHtml, buildEmbedPreview } from "@/lib/vault/link-parser";
+import { markdownToHtml, buildEmbedPreview, parseWikiLinkTarget } from "@/lib/vault/link-parser";
 import { htmlToMarkdown } from "@/lib/vault/html-to-markdown";
 import { useVaultStore } from "@/lib/vault/vault-store";
 import { findFileByLink } from "@/lib/vault/vault-data";
@@ -80,11 +80,14 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
   const openFileByLink = useVaultStore((s) => s.openFileByLink);
   const vault = useVaultStore((s) => s.vault);
   const scrollToHeadingId = useVaultStore((s) => s.scrollToHeadingId);
+  const scrollToBlockId = useVaultStore((s) => s.scrollToBlockId);
   const clearScrollToHeading = useVaultStore((s) => s.clearScrollToHeading);
+  const clearScrollToBlock = useVaultStore((s) => s.clearScrollToBlock);
 
   const resolveEmbed = useCallback(
     (target: string) => {
-      const file = findFileByLink(vault, target);
+      const { note } = parseWikiLinkTarget(target);
+      const file = findFileByLink(vault, note);
       if (!file) return null;
       return buildEmbedPreview(file.content);
     },
@@ -126,11 +129,15 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
         const target = event.target as HTMLElement;
         const embedEl = target.closest(".wiki-embed") as HTMLElement | null;
         if (embedEl) {
-          const linkTarget = embedEl.getAttribute("data-target");
-          if (linkTarget) {
-            openFileByLink(linkTarget);
-            return true;
+          const isHeader = target.closest(".wiki-embed-header");
+          if (isHeader) {
+            const linkTarget = embedEl.getAttribute("data-target");
+            if (linkTarget) {
+              openFileByLink(linkTarget);
+              return true;
+            }
           }
+          return false;
         }
         if (target.classList.contains("wiki-link")) {
           const linkTarget = target.getAttribute("data-target");
@@ -221,6 +228,13 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
     el?.scrollIntoView({ behavior: "smooth", block: "start" });
     clearScrollToHeading();
   }, [scrollToHeadingId, clearScrollToHeading]);
+
+  useEffect(() => {
+    if (!scrollToBlockId) return;
+    const el = document.getElementById(scrollToBlockId);
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    clearScrollToBlock();
+  }, [scrollToBlockId, clearScrollToBlock]);
 
   const setLink = useCallback(() => {
     if (!editor) return;
