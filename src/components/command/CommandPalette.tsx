@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { fuzzySort } from "@/lib/fuzzy-match";
 import { loadPreferences } from "@/lib/preferences";
 import { openDailyNote } from "@/lib/plugins/daily-notes";
+import { pluginRegistry } from "@/lib/plugins/registry";
 import { useVaultStore } from "@/lib/vault/vault-store";
 import { getFileDisplayName } from "@/lib/utils";
 
@@ -127,10 +128,27 @@ export function CommandPalette() {
     [commands, query]
   );
 
+  const pluginCommands: PaletteItem[] = useMemo(
+    () =>
+      pluginRegistry.getCommands().map((cmd) => ({
+        id: `plugin-${cmd.id}`,
+        label: cmd.label,
+        group: cmd.group || "Plugins",
+        icon: Zap,
+        action: cmd.action,
+      })),
+    []
+  );
+
+  const filteredPlugins = useMemo(
+    () => (query.trim() ? fuzzySort(pluginCommands, query, (c) => c.label) : pluginCommands),
+    [pluginCommands, query]
+  );
+
   const allItems = useMemo(() => {
-    if (query.trim()) return [...filteredCommands, ...fileItems];
-    return [...recentItems, ...filteredCommands, ...fileItems.slice(0, 5)];
-  }, [query, recentItems, filteredCommands, fileItems]);
+    if (query.trim()) return [...filteredCommands, ...filteredPlugins, ...fileItems];
+    return [...recentItems, ...filteredCommands, ...filteredPlugins, ...fileItems.slice(0, 5)];
+  }, [query, recentItems, filteredCommands, filteredPlugins, fileItems]);
 
   useEffect(() => {
     if (isCommandPaletteOpen) {

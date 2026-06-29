@@ -1,18 +1,19 @@
 /**
- * Settings panel with preferences and plugin management.
+ * Settings panel with preferences, theme, and plugin management.
  * Opened from the ribbon settings icon.
  */
 
 "use client";
 
 import { useEffect, useState } from "react";
-import { Puzzle, Calendar, Clock, Palette } from "lucide-react";
+import { Puzzle, Calendar, Clock, Palette, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   loadPreferences,
   savePreferences,
   type UserPreferences,
 } from "@/lib/preferences";
+import { ACCENT_COLORS, type AccentColor } from "@/lib/theme";
 import { pluginRegistry } from "@/lib/plugins/registry";
 
 /** Left sidebar settings panel */
@@ -39,11 +40,43 @@ export function SettingsPanel() {
 
       <div className="flex-1 overflow-y-auto">
         <section className="border-b border-obs-border p-3">
-          <div className="mb-2 flex items-center gap-2 text-[12px] font-medium text-obs-text">
+          <div className="mb-3 flex items-center gap-2 text-[12px] font-medium text-obs-text">
             <Palette size={14} className="text-obs-accent" />
             Appearance
           </div>
-          <p className="text-[12px] text-obs-text-faint">Dark theme (Obsidian default)</p>
+
+          <div className="mb-3 flex gap-1">
+            <ThemeButton
+              active={prefs.theme === "dark"}
+              onClick={() => update({ theme: "dark" })}
+              icon={<Moon size={14} />}
+              label="Dark"
+            />
+            <ThemeButton
+              active={prefs.theme === "light"}
+              onClick={() => update({ theme: "light" })}
+              icon={<Sun size={14} />}
+              label="Light"
+            />
+          </div>
+
+          <p className="mb-2 text-[11px] text-obs-text-faint">Accent color</p>
+          <div className="flex flex-wrap gap-2">
+            {(Object.keys(ACCENT_COLORS) as AccentColor[]).map((color) => (
+              <button
+                key={color}
+                type="button"
+                title={color}
+                aria-label={`Accent color ${color}`}
+                onClick={() => update({ accent: color })}
+                className={cn(
+                  "h-6 w-6 rounded-full border-2 transition-transform hover:scale-110",
+                  prefs.accent === color ? "border-obs-text scale-110" : "border-transparent"
+                )}
+                style={{ background: ACCENT_COLORS[color].primary }}
+              />
+            ))}
+          </div>
         </section>
 
         <section className="border-b border-obs-border p-3">
@@ -54,18 +87,12 @@ export function SettingsPanel() {
 
           <label className="mb-2 flex cursor-pointer items-center justify-between py-1">
             <span className="text-[13px] text-obs-text-muted">Enable daily notes</span>
-            <Toggle
-              checked={prefs.dailyNotesEnabled}
-              onChange={(v) => update({ dailyNotesEnabled: v })}
-            />
+            <Toggle checked={prefs.dailyNotesEnabled} onChange={(v) => update({ dailyNotesEnabled: v })} />
           </label>
 
           <label className="mb-2 flex cursor-pointer items-center justify-between py-1">
             <span className="text-[13px] text-obs-text-muted">Open on startup</span>
-            <Toggle
-              checked={prefs.openDailyNoteOnStartup}
-              onChange={(v) => update({ openDailyNoteOnStartup: v })}
-            />
+            <Toggle checked={prefs.openDailyNoteOnStartup} onChange={(v) => update({ openDailyNoteOnStartup: v })} />
           </label>
 
           <div className="mt-2">
@@ -86,10 +113,7 @@ export function SettingsPanel() {
           </div>
           <label className="flex cursor-pointer items-center justify-between py-1">
             <span className="text-[13px] text-obs-text-muted">Show recent files</span>
-            <Toggle
-              checked={prefs.showRecentInPalette}
-              onChange={(v) => update({ showRecentInPalette: v })}
-            />
+            <Toggle checked={prefs.showRecentInPalette} onChange={(v) => update({ showRecentInPalette: v })} />
           </label>
         </section>
 
@@ -116,6 +140,35 @@ export function SettingsPanel() {
         </section>
       </div>
     </div>
+  );
+}
+
+/** Theme mode selector button */
+function ThemeButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex flex-1 items-center justify-center gap-1.5 rounded-md border py-2 text-[12px] transition-colors",
+        active
+          ? "border-obs-accent bg-obs-accent/15 text-obs-accent"
+          : "border-obs-border text-obs-text-muted hover:bg-obs-interactive-hover"
+      )}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 

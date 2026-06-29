@@ -22,6 +22,8 @@ import { useVaultStore, initializeVault } from "@/lib/vault/vault-store";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { registerBuiltinPlugins } from "@/lib/plugins/registry";
 import { openDailyNote } from "@/lib/plugins/daily-notes";
+import { loadPreferences } from "@/lib/preferences";
+import { applyTheme } from "@/lib/theme";
 
 /** Root layout shell matching Obsidian's workspace structure */
 export function AppShell() {
@@ -49,6 +51,8 @@ export function AppShell() {
   const hasPaneContent = panes.some((p) => getPaneFile(p.id) !== null);
 
   useEffect(() => {
+    const prefs = loadPreferences();
+    applyTheme({ mode: prefs.theme, accent: prefs.accent });
     registerBuiltinPlugins();
     initializeVault();
   }, []);

@@ -10,6 +10,7 @@ import {
   createFolderOnDisk,
   writeFileToDisk,
   deleteFromDisk,
+  renameOnDisk,
 } from "@/lib/vault/vault-fs";
 
 /** Returns the full vault tree from disk */
@@ -53,6 +54,23 @@ export async function POST(request: NextRequest) {
     if (action === "delete") {
       deleteFromDisk(filePath);
       return NextResponse.json({ success: true });
+    }
+
+    if (action === "rename") {
+      const { newPath } = body as { newPath: string };
+      renameOnDisk(filePath, newPath);
+      const vault = readVaultFromDisk();
+      return NextResponse.json({ success: true, vault });
+    }
+
+    if (action === "move") {
+      const { targetFolder } = body as { targetFolder: string };
+      const segments = filePath.split("/");
+      const fileName = segments[segments.length - 1];
+      const newPath = targetFolder ? `${targetFolder}/${fileName}` : fileName;
+      renameOnDisk(filePath, newPath);
+      const vault = readVaultFromDisk();
+      return NextResponse.json({ success: true, vault });
     }
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
