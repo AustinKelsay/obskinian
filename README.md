@@ -4,14 +4,38 @@ A **skin-deep front-end clone** of [Obsidian](https://obsidian.md) — built as 
 
 ## Features
 
-- **Obsidian-accurate UI** — dark theme, ribbon, sidebars, tabs, status bar
-- **Demo vault** — real markdown files in `vault/` with folder structure
-- **File explorer** — collapsible folder tree with note navigation
-- **WYSIWYG editor** — TipTap-powered rich text editing
+### UI (Obsidian-accurate dark theme)
+- Left **ribbon** with File Explorer, Search, and Graph View icons
+- **Collapsible, resizable** left and right sidebars
+- **Tab bar** for open notes with close buttons
+- **Status bar** with word/character counts and vault info
+- **Command palette** (`⌘P` / `Ctrl+P`) for quick navigation and actions
+
+### Demo vault (`vault/`)
+- Real markdown files on disk with folder structure
+- Wiki-links (`[[like this]]`) connect notes across the vault
+- Filesystem sync via `/api/vault` API routes
+
+### Core features
+- **File explorer** — collapsible folder tree, create/delete notes
+- **WYSIWYG editor** — TipTap with live preview and formatting toolbar
+- **Source mode** — raw markdown editing (`⌘E` / `Ctrl+E` to toggle)
+- **Split panes** — vertical or horizontal editor splits
 - **Graph view** — force-directed visualization of wiki-link connections
 - **Search** — find notes by name or content
 - **Right sidebar** — outline, backlinks, and tags panels
-- **Wiki-links** — click `[[links]]` to navigate between notes
+- **Plugin scaffold** — extensible hook-based plugin registry
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `⌘P` / `Ctrl+P` | Command palette |
+| `⌘E` / `Ctrl+E` | Toggle live / source mode |
+| `⌘N` / `Ctrl+N` | Create new note |
+| `⌘W` / `Ctrl+W` | Close active tab |
+| `⌘G` / `Ctrl+G` | Open graph view |
+| `⌘⇧F` / `Ctrl+Shift+F` | Open search |
 
 ## Getting Started
 
@@ -20,27 +44,31 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the app.
+Open [http://localhost:3000](http://localhost:3000) — Welcome.md opens automatically.
 
 ## Project Structure
 
 ```
-vault/                  # Demo markdown files (physical files)
+vault/                  # Physical demo markdown files (read/written by API)
 src/
-├── app/                # Next.js app router
+├── app/api/vault/      # Filesystem CRUD API
 ├── components/
-│   ├── layout/         # Shell, ribbon, tabs, sidebars
-│   ├── explorer/       # File tree
-│   ├── editor/         # WYSIWYG editor
-│   ├── graph/          # Graph visualization
-│   └── search/         # Search panel
+│   ├── command/      # Command palette
+│   ├── editor/       # WYSIWYG, source, split panes
+│   ├── explorer/     # File tree
+│   ├── graph/        # Graph visualization
+│   ├── layout/       # Shell, ribbon, tabs, sidebars
+│   ├── plugins/      # Plugin manager UI
+│   └── search/       # Search panel
+├── hooks/              # Keyboard shortcuts
 └── lib/
-    └── vault/          # Types, data, store, link parsing
+    ├── plugins/        # Plugin registry
+    └── vault/          # Types, FS, store, link parsing
 ```
 
 ## Tech Stack
 
-- **Next.js 15** — React framework
+- **Next.js 15** — React framework with API routes
 - **TipTap** — WYSIWYG editor
 - **react-force-graph-2d** — Graph visualization
 - **Zustand** — State management

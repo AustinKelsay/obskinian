@@ -36,6 +36,7 @@ import { useVaultStore } from "@/lib/vault/vault-store";
 interface WysiwygEditorProps {
   fileId: string;
   content: string;
+  hideToolbar?: boolean;
 }
 
 interface ToolbarButtonProps {
@@ -66,7 +67,7 @@ function ToolbarButton({ onClick, isActive, title, children }: ToolbarButtonProp
 }
 
 /** Rich text WYSIWYG editor with formatting toolbar */
-export function WysiwygEditor({ fileId, content }: WysiwygEditorProps) {
+export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygEditorProps) {
   const updateContent = useVaultStore((s) => s.updateContent);
   const openFileByLink = useVaultStore((s) => s.openFileByLink);
 
@@ -125,6 +126,7 @@ export function WysiwygEditor({ fileId, content }: WysiwygEditorProps) {
 
   return (
     <div className="flex h-full flex-col">
+      {!hideToolbar && (
       <div className="flex shrink-0 items-center gap-0.5 border-b border-obs-border bg-obs-bg-secondary px-2 py-1">
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -219,6 +221,7 @@ export function WysiwygEditor({ fileId, content }: WysiwygEditorProps) {
           <LinkIcon size={15} />
         </ToolbarButton>
       </div>
+      )}
 
       <div className="flex-1 overflow-y-auto bg-obs-bg">
         <EditorContent editor={editor} className="h-full" />
