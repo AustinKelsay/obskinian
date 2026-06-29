@@ -34,12 +34,12 @@ import {
   updateFileFields,
   updateFileFrontmatter,
 } from "./vault-data";
-import { extractWikiLinks, extractWikiEmbeds, parseWikiLinkTarget, isBlockSubpath, resolveNoteId } from "./link-parser";
+import { parseWikiLinkTarget, isBlockSubpath } from "./link-parser";
 import { promoteMentionInContent } from "./mention-utils";
 import { serializeNote, parseNote } from "./frontmatter";
 import type { FrontmatterValue } from "./frontmatter";
-import { filterGraphByMode, filterGraphByText } from "./graph-utils";
 import { processTemplateContent } from "./templates";
+import { computeGraphData } from "./compute-graph-data";
 import { getFileDisplayName, pathToId } from "../utils";
 import { pluginRegistry } from "../plugins/registry";
 import {
@@ -720,46 +720,14 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   },
 
   getGraphData: () => {
-    const files = get().getAllFiles();
-    const nodes: GraphNode[] = files.map((f) => ({
-      id: f.id,
-      name: getFileDisplayName(f.path),
-      path: f.path,
-      val: 1 + extractWikiLinks(f.content).length * 0.5 + extractWikiEmbeds(f.content).length * 0.4,
-    }));
-
-    const nameToId = new Map<string, string>();
-    for (const f of files) {
-      nameToId.set(getFileDisplayName(f.path).toLowerCase(), f.id);
-      nameToId.set(f.path.replace(/\.md$/, "").toLowerCase(), f.id);
-    }
-
-    const links: GraphLink[] = [];
-    const seen = new Set<string>();
-
-    function addEdge(sourceId: string, targetName: string, kind: "link" | "embed") {
-      const targetId = resolveNoteId(targetName, nameToId);
-      if (!targetId || targetId === sourceId) return;
-      const key = `${kind}:${[sourceId, targetId].sort().join("-")}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      links.push({ source: sourceId, target: targetId, kind });
-    }
-
-    for (const file of files) {
-      for (const link of extractWikiLinks(file.content)) {
-        addEdge(file.id, link, "link");
-      }
-      for (const embed of extractWikiEmbeds(file.content)) {
-        addEdge(file.id, embed, "embed");
-      }
-    }
-
-    const { graphDisplayFilter, graphFilter } = get();
-    const activeFile = get().getActiveFile();
-    let filtered = filterGraphByMode(nodes, links, graphDisplayFilter, activeFile?.id ?? null);
-    filtered = filterGraphByText(filtered.nodes, filtered.links, graphFilter);
-    return filtered;
+    const state = get();
+    return computeGraphData({
+      vault: state.vault,
+      activeTabId: state.activeTabId,
+      tabs: state.tabs,
+      graphDisplayFilter: state.graphDisplayFilter,
+      graphFilter: state.graphFilter,
+    });
   },
 }));
 

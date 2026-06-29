@@ -2,8 +2,8 @@
  * Main page rendering the Obsidian clone application shell.
  */
 
-import { AppShell } from "@/components/layout/AppShell";
+import { ClientAppShell } from "@/components/layout/ClientAppShell";
 
 export default function Home() {
-  return <AppShell />;
+  return <ClientAppShell />;
 }

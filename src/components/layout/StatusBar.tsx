@@ -5,15 +5,37 @@
 
 "use client";
 
+import { useMemo } from "react";
 import { useVaultStore } from "@/lib/vault/vault-store";
+import { computeGraphData, countVaultFiles, resolveActiveFile } from "@/lib/vault/compute-graph-data";
 import { countCharacters, countWords } from "@/lib/utils";
 
 /** Bottom status bar with document statistics */
 export function StatusBar() {
-  const activeFile = useVaultStore((s) => s.getActiveFile());
-  const allFiles = useVaultStore((s) => s.getAllFiles());
+  const vault = useVaultStore((s) => s.vault);
+  const tabs = useVaultStore((s) => s.tabs);
+  const activeTabId = useVaultStore((s) => s.activeTabId);
   const viewMode = useVaultStore((s) => s.viewMode);
-  const graphData = useVaultStore((s) => s.getGraphData());
+  const graphFilter = useVaultStore((s) => s.graphFilter);
+  const graphDisplayFilter = useVaultStore((s) => s.graphDisplayFilter);
+
+  const activeFile = useMemo(
+    () => resolveActiveFile(vault, tabs, activeTabId),
+    [vault, tabs, activeTabId]
+  );
+
+  const fileCount = useMemo(() => countVaultFiles(vault), [vault]);
+
+  const graphStats = useMemo(() => {
+    const data = computeGraphData({
+      vault,
+      tabs,
+      activeTabId,
+      graphDisplayFilter,
+      graphFilter,
+    });
+    return { nodes: data.nodes.length, links: data.links.length };
+  }, [vault, tabs, activeTabId, graphDisplayFilter, graphFilter]);
 
   const words = activeFile ? countWords(activeFile.content) : 0;
   const chars = activeFile ? countCharacters(activeFile.content) : 0;
@@ -23,13 +45,13 @@ export function StatusBar() {
       <div className="flex items-center gap-2">
         <span>Demo Vault</span>
         <span className="text-obs-border-light">|</span>
-        <span>{allFiles.length} notes</span>
+        <span>{fileCount} notes</span>
         {viewMode === "graph" && (
           <>
             <span className="text-obs-border-light">|</span>
-            <span>{graphData.nodes.length} nodes</span>
+            <span>{graphStats.nodes} nodes</span>
             <span className="text-obs-border-light">|</span>
-            <span>{graphData.links.length} links</span>
+            <span>{graphStats.links} links</span>
           </>
         )}
       </div>

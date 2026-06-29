@@ -10,6 +10,7 @@ import { Search, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { readObsidianCssColors } from "@/lib/css-vars";
 import { iconBtnClass, panelTitleClass, searchFieldClass } from "@/lib/ui-classes";
+import { computeGraphData, resolveActiveFile } from "@/lib/vault/compute-graph-data";
 import type { GraphDisplayFilter } from "@/lib/vault/graph-utils";
 import { useVaultStore } from "@/lib/vault/vault-store";
 
@@ -30,13 +31,31 @@ const DISPLAY_FILTERS: { id: GraphDisplayFilter; label: string }[] = [
 
 /** Interactive graph view panel matching Obsidian's graph */
 export function GraphView() {
-  const graphData = useVaultStore((s) => s.getGraphData());
+  const vault = useVaultStore((s) => s.vault);
+  const tabs = useVaultStore((s) => s.tabs);
+  const activeTabId = useVaultStore((s) => s.activeTabId);
   const graphFilter = useVaultStore((s) => s.graphFilter);
   const graphDisplayFilter = useVaultStore((s) => s.graphDisplayFilter);
   const setGraphFilter = useVaultStore((s) => s.setGraphFilter);
   const setGraphDisplayFilter = useVaultStore((s) => s.setGraphDisplayFilter);
   const openFile = useVaultStore((s) => s.openFile);
-  const activeFile = useVaultStore((s) => s.getActiveFile());
+
+  const graphData = useMemo(
+    () =>
+      computeGraphData({
+        vault,
+        tabs,
+        activeTabId,
+        graphDisplayFilter,
+        graphFilter,
+      }),
+    [vault, tabs, activeTabId, graphDisplayFilter, graphFilter]
+  );
+
+  const activeFile = useMemo(
+    () => resolveActiveFile(vault, tabs, activeTabId),
+    [vault, tabs, activeTabId]
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const graphRef = useRef<any>(null);
