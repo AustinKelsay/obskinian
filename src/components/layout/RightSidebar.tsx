@@ -21,6 +21,8 @@ export function RightSidebar() {
     getActiveFile,
     getAllFiles,
     openFile,
+    setLeftPanel,
+    setSearchQuery,
   } = useVaultStore();
 
   const activeFile = getActiveFile();
@@ -125,12 +127,17 @@ export function RightSidebar() {
               <p className="text-[13px] text-obs-text-faint">No note open.</p>
             )}
             {tags.map((tag) => (
-              <span
+              <button
                 key={tag}
-                className="rounded-full bg-obs-tag/30 px-2.5 py-0.5 text-[12px] text-obs-text-muted"
+                type="button"
+                onClick={() => {
+                  setLeftPanel("search");
+                  setSearchQuery(`#${tag}`);
+                }}
+                className="rounded-full bg-obs-tag/30 px-2.5 py-0.5 text-[12px] text-obs-text-muted transition-colors hover:bg-obs-tag/50 hover:text-obs-text"
               >
                 #{tag}
-              </span>
+              </button>
             ))}
             {activeFile && tags.length === 0 && (
               <p className="text-[13px] text-obs-text-faint">No tags found.</p>

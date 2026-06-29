@@ -433,4 +433,55 @@ export function generateUntitledPath(existingFiles: VaultFile[]): string {
   return `Untitled ${n}.md`;
 }
 
+/** Generates a unique untitled folder name */
+export function generateUntitledFolderPath(root: VaultFolder): string {
+  let n = 1;
+  function hasFolder(node: VaultNode, name: string): boolean {
+    if (node.type === "folder" && node.name === name) return true;
+    if (node.type === "folder") return node.children.some((c) => hasFolder(c, name));
+    return false;
+  }
+  while (hasFolder(root, `Untitled Folder ${n}`)) n += 1;
+  return `Untitled Folder ${n}`;
+}
+
+/** Adds an empty folder to the vault tree (immutable update) */
+export function addFolderToTree(root: VaultFolder, folderPath: string): VaultFolder {
+  const segments = folderPath.split("/");
+  const copy = structuredClone(root) as VaultFolder;
+
+  let current = copy;
+  for (const segment of segments) {
+    let folder = current.children.find(
+      (c): c is VaultFolder => c.type === "folder" && c.name === segment
+    );
+    if (!folder) {
+      const path = current.path ? `${current.path}/${segment}` : segment;
+      folder = {
+        id: pathToId(path),
+        name: segment,
+        type: "folder",
+        path,
+        children: [],
+        isExpanded: true,
+      };
+      current.children.push(folder);
+    }
+    current = folder;
+  }
+
+  sortChildren(copy);
+  return copy;
+}
+
+/** Collapses all folders in the tree (immutable update) */
+export function collapseAllFolders(node: VaultNode): VaultNode {
+  if (node.type === "file") return node;
+  return {
+    ...node,
+    isExpanded: false,
+    children: node.children.map(collapseAllFolders),
+  };
+}
+
 export { DEMO_FILES };

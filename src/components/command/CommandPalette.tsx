@@ -1,14 +1,38 @@
 /**
  * Obsidian-style command palette for quick navigation and actions.
- * Opens with Ctrl/Cmd+P and supports fuzzy search over notes and commands.
+ * Supports fuzzy search, recent files, and grouped commands.
  */
 
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, FileText, Zap, Share2, Plus, Trash2, Code } from "lucide-react";
+import {
+  Search,
+  FileText,
+  Zap,
+  Share2,
+  Plus,
+  Trash2,
+  Code,
+  Calendar,
+  Clock,
+  FolderPlus,
+  Settings,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fuzzySort } from "@/lib/fuzzy-match";
+import { loadPreferences } from "@/lib/preferences";
+import { openDailyNote } from "@/lib/plugins/daily-notes";
 import { useVaultStore } from "@/lib/vault/vault-store";
+import { getFileDisplayName } from "@/lib/utils";
+
+interface PaletteItem {
+  id: string;
+  label: string;
+  group: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  action: () => void;
+}
 
 /** Modal command palette overlay */
 export function CommandPalette() {
@@ -18,6 +42,7 @@ export function CommandPalette() {
     getAllFiles,
     openFile,
     createNote,
+    createFolder,
     setLeftPanel,
     setViewMode,
     splitPane,
@@ -25,6 +50,7 @@ export function CommandPalette() {
     panes,
     setPaneEditorMode,
     getActiveFile,
+    recentFileIds,
   } = useVaultStore();
 
   const [query, setQuery] = useState("");
@@ -34,13 +60,17 @@ export function CommandPalette() {
   const files = getAllFiles();
   const activeFile = getActiveFile();
   const activePane = panes.find((p) => p.id === activePaneId);
+  const prefs = loadPreferences();
 
-  const commands = useMemo(
+  const commands: PaletteItem[] = useMemo(
     () => [
       { id: "new-note", label: "Create new note", group: "Notes", icon: Plus, action: () => createNote() },
+      { id: "new-folder", label: "Create new folder", group: "Notes", icon: FolderPlus, action: () => createFolder() },
+      { id: "daily-note", label: "Open today's daily note", group: "Notes", icon: Calendar, action: () => openDailyNote() },
       { id: "graph", label: "Open graph view", group: "Views", icon: Share2, action: () => { setLeftPanel("graph"); setViewMode("graph"); } },
       { id: "search", label: "Open search", group: "Views", icon: Search, action: () => setLeftPanel("search") },
       { id: "explorer", label: "Open file explorer", group: "Views", icon: FileText, action: () => setLeftPanel("explorer") },
+      { id: "settings", label: "Open settings", group: "Views", icon: Settings, action: () => setLeftPanel("settings") },
       { id: "split-v", label: "Split pane vertically", group: "Pane", icon: Zap, action: () => splitPane("vertical") },
       { id: "split-h", label: "Split pane horizontally", group: "Pane", icon: Zap, action: () => splitPane("horizontal") },
       {
@@ -60,41 +90,47 @@ export function CommandPalette() {
           }]
         : []),
     ],
-    [activeFile, activePane, activePaneId, createNote, setLeftPanel, setViewMode, splitPane, setPaneEditorMode]
+    [activeFile, activePane, activePaneId, createNote, createFolder, setLeftPanel, setViewMode, splitPane, setPaneEditorMode]
   );
 
-  const fileItems = useMemo(
-    () =>
-      files
-        .filter((f) => {
-          if (!query.trim()) return true;
-          return f.name.toLowerCase().includes(query.toLowerCase()) ||
-            f.content.toLowerCase().includes(query.toLowerCase());
-        })
-        .slice(0, 8)
-        .map((f) => ({
-          id: `file-${f.id}`,
-          label: f.name.replace(".md", ""),
-          group: "Notes",
-          icon: FileText,
-          action: () => openFile(f.id),
-        })),
-    [files, query, openFile]
-  );
+  const recentItems: PaletteItem[] = useMemo(() => {
+    if (!prefs.showRecentInPalette || query.trim()) return [];
+    return recentFileIds
+      .map((id) => files.find((f) => f.id === id))
+      .filter(Boolean)
+      .slice(0, 5)
+      .map((f) => ({
+        id: `recent-${f!.id}`,
+        label: getFileDisplayName(f!.path),
+        group: "Recent",
+        icon: Clock,
+        action: () => openFile(f!.id),
+      }));
+  }, [recentFileIds, files, query, prefs.showRecentInPalette, openFile]);
+
+  const fileItems: PaletteItem[] = useMemo(() => {
+    const matched = query.trim()
+      ? fuzzySort(files, query, (f) => getFileDisplayName(f.path))
+      : files;
+
+    return matched.slice(0, 10).map((f) => ({
+      id: `file-${f.id}`,
+      label: getFileDisplayName(f.path),
+      group: "Notes",
+      icon: FileText,
+      action: () => openFile(f.id),
+    }));
+  }, [files, query, openFile]);
 
   const filteredCommands = useMemo(
-    () =>
-      commands.filter((c) => {
-        if (!query.trim()) return true;
-        return c.label.toLowerCase().includes(query.toLowerCase());
-      }),
+    () => (query.trim() ? fuzzySort(commands, query, (c) => c.label) : commands),
     [commands, query]
   );
 
-  const allItems = useMemo(
-    () => [...filteredCommands, ...fileItems],
-    [filteredCommands, fileItems]
-  );
+  const allItems = useMemo(() => {
+    if (query.trim()) return [...filteredCommands, ...fileItems];
+    return [...recentItems, ...filteredCommands, ...fileItems.slice(0, 5)];
+  }, [query, recentItems, filteredCommands, fileItems]);
 
   useEffect(() => {
     if (isCommandPaletteOpen) {
@@ -110,7 +146,7 @@ export function CommandPalette() {
 
   if (!isCommandPaletteOpen) return null;
 
-  function execute(item: (typeof allItems)[0]) {
+  function execute(item: PaletteItem) {
     item.action();
     setCommandPaletteOpen(false);
   }
@@ -135,6 +171,8 @@ export function CommandPalette() {
       execute(allItems[selectedIndex]);
     }
   }
+
+  let lastGroup = "";
 
   return (
     <div
@@ -167,23 +205,31 @@ export function CommandPalette() {
           )}
           {allItems.map((item, index) => {
             const Icon = item.icon;
+            const showHeader = item.group !== lastGroup;
+            lastGroup = item.group;
+
             return (
-              <button
-                key={item.id}
-                type="button"
-                className={cn(
-                  "flex w-full items-center gap-3 px-4 py-2 text-left transition-colors",
-                  index === selectedIndex
-                    ? "bg-obs-accent/20 text-obs-text"
-                    : "text-obs-text-muted hover:bg-obs-interactive-hover"
+              <div key={item.id}>
+                {showHeader && (
+                  <div className="px-4 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wider text-obs-text-faint">
+                    {item.group}
+                  </div>
                 )}
-                onClick={() => execute(item)}
-                onMouseEnter={() => setSelectedIndex(index)}
-              >
-                <Icon size={15} className="shrink-0 text-obs-text-faint" />
-                <span className="flex-1 truncate text-[13px]">{item.label}</span>
-                <span className="text-[11px] text-obs-text-faint">{item.group}</span>
-              </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "flex w-full items-center gap-3 px-4 py-2 text-left transition-colors",
+                    index === selectedIndex
+                      ? "bg-obs-accent/20 text-obs-text"
+                      : "text-obs-text-muted hover:bg-obs-interactive-hover"
+                  )}
+                  onClick={() => execute(item)}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                >
+                  <Icon size={15} className="shrink-0 text-obs-text-faint" />
+                  <span className="flex-1 truncate text-[13px]">{item.label}</span>
+                </button>
+              </div>
             );
           })}
         </div>

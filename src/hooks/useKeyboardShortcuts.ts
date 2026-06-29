@@ -14,6 +14,7 @@ interface ShortcutHandlers {
   onNewNote?: () => void;
   onToggleGraph?: () => void;
   onToggleSearch?: () => void;
+  onDailyNote?: () => void;
 }
 
 /** Registers global keyboard shortcuts matching Obsidian defaults */
@@ -55,6 +56,12 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
       if (mod && e.shiftKey && e.key === "f") {
         e.preventDefault();
         handlers.onToggleSearch?.();
+        return;
+      }
+
+      if (mod && e.key === "d") {
+        e.preventDefault();
+        handlers.onDailyNote?.();
         return;
       }
     }

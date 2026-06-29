@@ -36,6 +36,15 @@ A **skin-deep front-end clone** of [Obsidian](https://obsidian.md) — built as 
 | `⌘W` / `Ctrl+W` | Close active tab |
 | `⌘G` / `Ctrl+G` | Open graph view |
 | `⌘⇧F` / `Ctrl+Shift+F` | Open search |
+| `⌘D` / `Ctrl+D` | Open today's daily note (via command palette) |
+
+### Phase 3
+- **Settings panel** — daily notes, recent files, plugin list
+- **Fuzzy command palette** — smarter search with grouped results
+- **Recent files** — shown in command palette when empty
+- **Folder create/collapse** — wired in file explorer
+- **Tab pinning** — pin icon on tabs
+- **Clickable tags** — click to search by tag
 
 ## Getting Started
 

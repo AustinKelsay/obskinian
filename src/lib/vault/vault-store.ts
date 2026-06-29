@@ -20,10 +20,13 @@ import type {
 } from "./types";
 import {
   addFileToTree,
+  addFolderToTree,
   buildVaultTree,
+  collapseAllFolders,
   findFileById,
   findFileByLink,
   flattenVaultFiles,
+  generateUntitledFolderPath,
   generateUntitledPath,
   removeNodeFromTree,
   toggleFolderExpanded,
@@ -32,6 +35,27 @@ import {
 import { extractWikiLinks } from "./link-parser";
 import { getFileDisplayName, pathToId } from "../utils";
 import { pluginRegistry } from "../plugins/registry";
+const RECENT_KEY = "obskinian-recent-files";
+const MAX_RECENT = 10;
+
+/** Loads recent file ids from localStorage */
+function loadRecentFiles(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+/** Persists a file id to the recent files list */
+function pushRecentFile(fileId: string): string[] {
+  const recent = loadRecentFiles().filter((id) => id !== fileId);
+  recent.unshift(fileId);
+  const trimmed = recent.slice(0, MAX_RECENT);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(trimmed));
+  return trimmed;
+}
 
 interface VaultStore {
   vault: VaultFolder;
@@ -50,15 +74,19 @@ interface VaultStore {
   searchResults: SearchResult[];
   graphFilter: string;
   isCommandPaletteOpen: boolean;
+  recentFileIds: string[];
 
   loadVault: () => Promise<void>;
   openFile: (fileId: string, paneId?: string) => void;
   openFileByLink: (link: string) => void;
   closeTab: (tabId: string) => void;
   setActiveTab: (tabId: string) => void;
+  pinTab: (tabId: string) => void;
   updateContent: (fileId: string, content: string) => void;
   createNote: (folderPath?: string) => Promise<void>;
+  createFolder: (parentPath?: string) => Promise<void>;
   deleteFile: (fileId: string) => Promise<void>;
+  collapseAllFolders: () => void;
   toggleFolder: (folderId: string) => void;
   setLeftPanel: (panel: LeftPanel) => void;
   setRightPanel: (panel: RightPanel) => void;
@@ -108,6 +136,7 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   searchResults: [],
   graphFilter: "",
   isCommandPaletteOpen: false,
+  recentFileIds: [],
 
   loadVault: async () => {
     try {
@@ -134,7 +163,13 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
 
     const existing = tabs.find((t) => t.fileId === fileId);
     if (existing) {
-      set({ activeTabId: existing.id, viewMode: "editor", panes: updatedPanes, activePaneId: targetPane });
+      set({
+        activeTabId: existing.id,
+        viewMode: "editor",
+        panes: updatedPanes,
+        activePaneId: targetPane,
+        recentFileIds: pushRecentFile(file.id),
+      });
       pluginRegistry.fireHook("onFileOpen", file.path);
       return;
     }
@@ -153,6 +188,7 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
       viewMode: "editor",
       panes: updatedPanes,
       activePaneId: targetPane,
+      recentFileIds: pushRecentFile(file.id),
     });
     pluginRegistry.fireHook("onFileOpen", file.path);
   },
@@ -187,6 +223,14 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
     if (!tab) return;
     set({ activeTabId: tabId, viewMode: "editor" });
     get().openFile(tab.fileId);
+  },
+
+  pinTab: (tabId: string) => {
+    set((state) => ({
+      tabs: state.tabs.map((t) =>
+        t.id === tabId ? { ...t, isPinned: !t.isPinned } : t
+      ),
+    }));
   },
 
   updateContent: (fileId: string, content: string) => {
@@ -236,6 +280,25 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
     }
   },
 
+  createFolder: async (parentPath?: string) => {
+    const folderName = generateUntitledFolderPath(get().vault);
+    const folderPath = parentPath ? `${parentPath}/${folderName}` : folderName;
+
+    try {
+      await fetch("/api/vault", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create", path: folderPath, type: "folder" }),
+      });
+    } catch {
+      /* continue with local update */
+    }
+
+    set((state) => ({
+      vault: addFolderToTree(state.vault, folderPath),
+    }));
+  },
+
   deleteFile: async (fileId: string) => {
     const file = findFileById(get().vault, fileId);
     if (!file) return;
@@ -260,6 +323,12 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   toggleFolder: (folderId: string) => {
     set((state) => ({
       vault: toggleFolderExpanded(state.vault, folderId) as VaultFolder,
+    }));
+  },
+
+  collapseAllFolders: () => {
+    set((state) => ({
+      vault: collapseAllFolders(state.vault) as VaultFolder,
     }));
   },
 
@@ -427,10 +496,17 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
 
 /** Loads vault from disk and opens Welcome.md */
 export async function initializeVault() {
+  useVaultStore.setState({ recentFileIds: loadRecentFiles() });
+
   const store = useVaultStore.getState();
   await store.loadVault();
-  const welcome = store.getAllFiles().find((f) => f.path === "Welcome.md");
-  if (welcome && store.tabs.length === 0) {
-    store.openFile(welcome.id);
-  }
+
+  const { maybeOpenDailyNoteOnStartup } = await import("@/lib/plugins/daily-notes");
+  await maybeOpenDailyNoteOnStartup();
+
+  const state = useVaultStore.getState();
+  if (state.tabs.length > 0) return;
+
+  const welcome = state.getAllFiles().find((f) => f.path === "Welcome.md");
+  if (welcome) state.openFile(welcome.id);
 }
