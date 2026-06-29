@@ -11,6 +11,14 @@ interface EditorHydratorProps {
   hydrateKey: number;
 }
 
+/** Resolves default export from dynamic ESM/CJS interop bundles */
+function resolveDefault(mod: unknown): Record<string, unknown> {
+  if (mod && typeof mod === "object" && "default" in mod && mod.default) {
+    return mod.default as Record<string, unknown>;
+  }
+  return mod as Record<string, unknown>;
+}
+
 /** Renders Mermaid diagrams and highlights code blocks inside the editor */
 export function EditorHydrator({ containerRef, hydrateKey }: EditorHydratorProps) {
   useEffect(() => {
@@ -23,8 +31,10 @@ export function EditorHydrator({ containerRef, hydrateKey }: EditorHydratorProps
       );
       if (nodes.length === 0) return;
 
-      const mermaid = (await import("mermaid")).default;
-      mermaid.initialize({
+      const mermaid = resolveDefault(await import("mermaid"));
+      if (typeof mermaid.initialize !== "function" || typeof mermaid.render !== "function") return;
+
+      (mermaid.initialize as (config: object) => void)({
         theme: "dark",
         startOnLoad: false,
         securityLevel: "strict",
@@ -35,7 +45,10 @@ export function EditorHydrator({ containerRef, hydrateKey }: EditorHydratorProps
         if (!source) continue;
         try {
           const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
-          const { svg } = await mermaid.render(id, source);
+          const { svg } = await (mermaid.render as (id: string, src: string) => Promise<{ svg: string }>)(
+            id,
+            source
+          );
           node.innerHTML = svg;
           node.setAttribute("data-rendered", "true");
         } catch {
@@ -46,9 +59,11 @@ export function EditorHydrator({ containerRef, hydrateKey }: EditorHydratorProps
     }
 
     async function hydrateCode() {
-      const hljs = (await import("highlight.js/lib/common")).default;
+      const hljs = resolveDefault(await import("highlight.js/lib/common"));
+      if (typeof hljs.highlightElement !== "function") return;
+
       container!.querySelectorAll("pre code[data-lang]").forEach((block) => {
-        hljs.highlightElement(block as HTMLElement);
+        (hljs.highlightElement as (el: HTMLElement) => void)(block as HTMLElement);
       });
     }
 

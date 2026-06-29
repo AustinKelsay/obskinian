@@ -4,21 +4,9 @@
 
 "use client";
 
-import dynamic from "next/dynamic";
+import { AppShell } from "./AppShell";
 
-const AppShell = dynamic(
-  () => import("@/components/layout/AppShell").then((mod) => mod.AppShell),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-screen items-center justify-center bg-obs-bg text-[13px] text-obs-text-faint">
-        Loading Obskinian…
-      </div>
-    ),
-  }
-);
-
-/** Renders the full Obsidian clone UI on the client only */
+/** Renders the full Obsidian clone UI */
 export function ClientAppShell() {
   return <AppShell />;
 }

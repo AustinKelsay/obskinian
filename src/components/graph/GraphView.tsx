@@ -14,14 +14,17 @@ import { computeGraphData, resolveActiveFile } from "@/lib/vault/compute-graph-d
 import type { GraphDisplayFilter } from "@/lib/vault/graph-utils";
 import { useVaultStore } from "@/lib/vault/vault-store";
 
-const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-full items-center justify-center text-[13px] text-obs-text-faint">
-      Loading graph…
-    </div>
-  ),
-});
+const ForceGraph2D = dynamic(
+  () => import("react-force-graph-2d").then((mod) => mod.default),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full items-center justify-center text-[13px] text-obs-text-faint">
+        Loading graph…
+      </div>
+    ),
+  }
+);
 
 const DISPLAY_FILTERS: { id: GraphDisplayFilter; label: string }[] = [
   { id: "all", label: "All" },
@@ -178,7 +181,7 @@ export function GraphView() {
             }
             linkWidth={(link) => ((link as { kind?: string }).kind === "embed" ? 1 : 1.5)}
             linkLineDash={(link) =>
-              (link as { kind?: string }).kind === "embed" ? [4, 3] : null
+              (link as { kind?: string }).kind === "embed" ? [4, 3] : []
             }
             nodeCanvasObject={(node, ctx, globalScale) => {
               const label = (node.name as string) ?? "";
