@@ -35,6 +35,7 @@ import {
   updateFileFrontmatter,
 } from "./vault-data";
 import { extractWikiLinks, extractWikiEmbeds, parseWikiLinkTarget, isBlockSubpath, resolveNoteId } from "./link-parser";
+import { promoteMentionInContent } from "./mention-utils";
 import { serializeNote, parseNote } from "./frontmatter";
 import type { FrontmatterValue } from "./frontmatter";
 import { filterGraphByMode, filterGraphByText } from "./graph-utils";
@@ -95,7 +96,7 @@ interface VaultStore {
 
   loadVault: () => Promise<void>;
   openFile: (fileId: string, paneId?: string) => void;
-  openFileByLink: (link: string) => void;
+  openFileByLink: (link: string, options?: { openInSplit?: boolean }) => void;
   closeTab: (tabId: string) => void;
   setActiveTab: (tabId: string) => void;
   pinTab: (tabId: string) => void;
@@ -133,6 +134,11 @@ interface VaultStore {
   getActiveFile: () => VaultFile | null;
   getPaneFile: (paneId: string) => VaultFile | null;
   getAllFiles: () => VaultFile[];
+  promoteUnlinkedMention: (
+    sourceFileId: string,
+    targetNoteName: string,
+    contextLine: string
+  ) => void;
   getGraphData: () => { nodes: GraphNode[]; links: GraphLink[] };
 }
 
@@ -230,12 +236,27 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
     pluginRegistry.fireHook("onFileOpen", file.path);
   },
 
-  openFileByLink: (link: string) => {
+  openFileByLink: (link: string, options?: { openInSplit?: boolean }) => {
     const { note, subpath } = parseWikiLinkTarget(link);
     const file = findFileByLink(get().vault, note);
     if (!file) return;
 
-    get().openFile(file.id);
+    if (options?.openInSplit) {
+      const { splitDirection, splitPane, panes, activePaneId } = get();
+      let targetPane = activePaneId;
+
+      if (splitDirection === "none") {
+        splitPane("vertical");
+        const updated = get().panes;
+        targetPane = updated.find((p) => p.id !== activePaneId)?.id ?? get().activePaneId;
+      } else {
+        targetPane = panes.find((p) => p.id !== activePaneId)?.id ?? activePaneId;
+      }
+
+      get().openFile(file.id, targetPane);
+    } else {
+      get().openFile(file.id);
+    }
 
     if (!subpath) return;
 
@@ -689,6 +710,14 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   },
 
   getAllFiles: () => flattenVaultFiles(get().vault),
+
+  promoteUnlinkedMention: (sourceFileId, targetNoteName, contextLine) => {
+    const source = findFileById(get().vault, sourceFileId);
+    if (!source) return;
+
+    const updated = promoteMentionInContent(source.content, targetNoteName, contextLine);
+    if (updated) get().updateContent(sourceFileId, updated);
+  },
 
   getGraphData: () => {
     const files = get().getAllFiles();

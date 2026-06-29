@@ -13,6 +13,13 @@ When you create a link like `[[Knowledge Graph Theory]]`, Obsidian draws a conne
 - **Focus**: Click a node to open that note
 - **Filter**: Use the search box to highlight specific notes
 
+```mermaid
+graph LR
+  Welcome --> Graph View
+  Welcome -->|"embed"| Obsidian Clone
+  Graph View --> Knowledge Graph Theory
+```
+
 ## Related Notes
 
 - [[Welcome]]

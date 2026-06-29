@@ -8,6 +8,8 @@ import type { BacklinkEntry } from "./types";
 export interface MarkdownToHtmlOptions {
   /** Resolves embed target to preview text */
   resolveEmbed?: (target: string) => string | null;
+  /** Resolves embed target to full HTML body for transclusion */
+  resolveEmbedHtml?: (target: string) => string | null;
 }
 
 export interface ParsedWikiTarget {
@@ -172,8 +174,15 @@ export function markdownToHtml(md: string, options?: MarkdownToHtmlOptions): str
   let html = parseCallouts(md);
 
   html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
-    const langAttr = lang ? ` class="language-${lang}"` : "";
-    return `<pre><code${langAttr}>${escapeHtml(code.trim())}</code></pre>`;
+    const trimmed = code.trim();
+    if (lang === "mermaid") {
+      return (
+        `<div class="mermaid-diagram" contenteditable="false" ` +
+        `data-mermaid-source="${escapeHtml(trimmed)}">${escapeHtml(trimmed)}</div>`
+      );
+    }
+    const langAttr = lang ? ` data-lang="${lang}" class="language-${lang}"` : "";
+    return `<pre><code${langAttr}>${escapeHtml(trimmed)}</code></pre>`;
   });
 
   const headingHtml = (level: number, t: string, bid?: string) => {
@@ -206,14 +215,23 @@ export function markdownToHtml(md: string, options?: MarkdownToHtmlOptions): str
       }
       const { note, subpath } = parseWikiLinkTarget(trimmed);
       const lookupTarget = subpath ? `${note}#${subpath}` : note;
+      const fullHtml =
+        options?.resolveEmbedHtml?.(lookupTarget) ?? options?.resolveEmbedHtml?.(note);
       const preview = options?.resolveEmbed?.(lookupTarget) ?? options?.resolveEmbed?.(note);
-      const previewText = preview
-        ? escapeHtml(preview.slice(0, 280))
-        : '<span class="wiki-embed-missing">Note not found</span>';
+
+      let bodyContent: string;
+      if (fullHtml) {
+        bodyContent = `<div class="wiki-embed-content">${fullHtml}</div>`;
+      } else if (preview) {
+        bodyContent = escapeHtml(preview.slice(0, 280));
+      } else {
+        bodyContent = '<span class="wiki-embed-missing">Note not found</span>';
+      }
+
       return (
-        `<div class="wiki-embed" data-target="${escapeHtml(trimmed)}" contenteditable="false">` +
+        `<div class="wiki-embed${fullHtml ? " wiki-embed-full" : ""}" data-target="${escapeHtml(trimmed)}" contenteditable="false">` +
           `<div class="wiki-embed-header">${escapeHtml(note)}</div>` +
-          `<div class="wiki-embed-body">${previewText}</div>` +
+          `<div class="wiki-embed-body">${bodyContent}</div>` +
           `</div>`
       );
     }

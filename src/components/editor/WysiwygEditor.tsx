@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useEffect, useCallback, useState, useRef } from "react";
+import { useEffect, useCallback, useState, useRef, useMemo } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -30,10 +30,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { markdownToHtml, buildEmbedPreview, parseWikiLinkTarget } from "@/lib/vault/link-parser";
+import { createEmbedResolvers } from "@/lib/vault/embed-resolvers";
 import { htmlToMarkdown } from "@/lib/vault/html-to-markdown";
 import { useVaultStore } from "@/lib/vault/vault-store";
 import { findFileByLink } from "@/lib/vault/vault-data";
 import { SlashCommandMenu } from "./SlashCommandMenu";
+import { EditorHydrator } from "./EditorHydrator";
+import { WikiLinkPopover } from "./WikiLinkPopover";
 import {
   applyTiptapSlashCommand,
   detectSlashQuery,
@@ -84,17 +87,16 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
   const clearScrollToHeading = useVaultStore((s) => s.clearScrollToHeading);
   const clearScrollToBlock = useVaultStore((s) => s.clearScrollToBlock);
 
-  const resolveEmbed = useCallback(
-    (target: string) => {
-      const { note } = parseWikiLinkTarget(target);
-      const file = findFileByLink(vault, note);
-      if (!file) return null;
-      return buildEmbedPreview(file.content);
-    },
-    [vault]
-  );
+  const embedOptions = useMemo(() => createEmbedResolvers(vault), [vault]);
+  const initialHtml = markdownToHtml(content, embedOptions);
 
-  const initialHtml = markdownToHtml(content, { resolveEmbed });
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+  const [hydrateKey, setHydrateKey] = useState(0);
+  const [linkPreview, setLinkPreview] = useState<{
+    title: string;
+    preview: string;
+    position: { top: number; left: number };
+  } | null>(null);
 
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashQuery, setSlashQuery] = useState("");
@@ -133,16 +135,23 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
           if (isHeader) {
             const linkTarget = embedEl.getAttribute("data-target");
             if (linkTarget) {
-              openFileByLink(linkTarget);
+              openFileByLink(linkTarget, {
+                openInSplit: event.metaKey || event.ctrlKey,
+              });
               return true;
             }
           }
           return false;
         }
-        if (target.classList.contains("wiki-link")) {
-          const linkTarget = target.getAttribute("data-target");
+        const wikiEl = target.classList.contains("wiki-link")
+          ? target
+          : (target.closest(".wiki-link") as HTMLElement | null);
+        if (wikiEl) {
+          const linkTarget = wikiEl.getAttribute("data-target");
           if (linkTarget) {
-            openFileByLink(linkTarget);
+            openFileByLink(linkTarget, {
+              openInSplit: event.metaKey || event.ctrlKey,
+            });
             return true;
           }
         }
@@ -178,6 +187,7 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
     },
     onUpdate: ({ editor: ed }) => {
       updateContent(fileId, htmlToMarkdown(ed.getHTML()));
+      setHydrateKey((k) => k + 1);
 
       const { from } = ed.state.selection;
       const textBefore = ed.state.doc.textBetween(Math.max(0, from - 50), from);
@@ -218,9 +228,42 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
 
   useEffect(() => {
     if (editor && content !== htmlToMarkdown(editor.getHTML())) {
-      editor.commands.setContent(markdownToHtml(content, { resolveEmbed }));
+      editor.commands.setContent(markdownToHtml(content, embedOptions));
+      setHydrateKey((k) => k + 1);
     }
-  }, [fileId, resolveEmbed]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fileId, embedOptions]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const container = editorContainerRef.current;
+    if (!container) return;
+
+    function handleMouseOver(e: MouseEvent) {
+      const wikiEl = (e.target as HTMLElement).closest(".wiki-link") as HTMLElement | null;
+      if (!wikiEl) {
+        setLinkPreview(null);
+        return;
+      }
+      const linkTarget = wikiEl.getAttribute("data-target");
+      if (!linkTarget) return;
+
+      const { note } = parseWikiLinkTarget(linkTarget);
+      const file = findFileByLink(vault, note);
+      const preview = file ? buildEmbedPreview(file.content) : "Note not found";
+      const rect = wikiEl.getBoundingClientRect();
+
+      setLinkPreview({
+        title: note,
+        preview,
+        position: { top: rect.bottom + 6, left: Math.min(rect.left, window.innerWidth - 280) },
+      });
+    }
+
+    container.addEventListener("mouseover", handleMouseOver);
+    container.addEventListener("mouseleave", () => setLinkPreview(null));
+    return () => {
+      container.removeEventListener("mouseover", handleMouseOver);
+    };
+  }, [vault, editor]);
 
   useEffect(() => {
     if (!scrollToHeadingId) return;
@@ -349,7 +392,14 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
       </div>
       )}
 
-      <div className="relative flex-1 overflow-y-auto bg-obs-bg">
+      <div ref={editorContainerRef} className="relative flex-1 overflow-y-auto bg-obs-bg">
+        <WikiLinkPopover
+          title={linkPreview?.title ?? ""}
+          preview={linkPreview?.preview ?? ""}
+          position={linkPreview?.position ?? { top: 0, left: 0 }}
+          visible={!!linkPreview}
+        />
+        <EditorHydrator containerRef={editorContainerRef} hydrateKey={hydrateKey} />
         {slashOpen && slashCommands.length > 0 && (
           <SlashCommandMenu
             commands={slashCommands}

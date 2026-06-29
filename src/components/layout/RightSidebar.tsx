@@ -33,6 +33,7 @@ export function RightSidebar({ className }: { className?: string }) {
     setLeftPanel,
     setSearchQuery,
     scrollToHeading,
+    promoteUnlinkedMention,
   } = useVaultStore();
 
   const activeFile = getActiveFile();
@@ -150,6 +151,13 @@ export function RightSidebar({ className }: { className?: string }) {
                     fileName={bl.fileName}
                     context={bl.context}
                     onClick={() => openFile(bl.fileId)}
+                    onPromote={() =>
+                      promoteUnlinkedMention(
+                        bl.fileId,
+                        activeFile!.name,
+                        bl.context
+                      )
+                    }
                   />
                 ))}
               </>

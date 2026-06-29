@@ -79,6 +79,14 @@ A **skin-deep front-end clone** of [Obsidian](https://obsidian.md) — built as 
 - **Slash commands** — `/callout`, `/embed`, `/blockid` for quick insertion
 - **Alias round-trip** — `[[target|alias]]` preserved through WYSIWYG editing
 
+### Phase 9
+- **Full transclusion** — `![[Note]]` renders the complete embedded note body inline
+- **Wiki-link hover preview** — tooltip with note preview on hover in live editor
+- **Cmd/Ctrl+click** — open wiki-links and embeds in a split pane
+- **Mermaid diagrams** — ` ```mermaid ` code blocks render as SVG diagrams
+- **Syntax highlighting** — fenced code blocks highlighted via highlight.js
+- **Promote unlinked mentions** — convert plain-text mentions to `[[wiki-links]]` from backlinks panel
+
 ## Getting Started
 
 ```bash

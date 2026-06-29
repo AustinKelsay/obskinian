@@ -4,6 +4,7 @@
  */
 
 @import "tailwindcss";
+@import "highlight.js/styles/atom-one-dark.css";
 
 @theme inline {
   --color-obs-bg: #1e1e1e;
@@ -288,6 +289,53 @@ body {
   border-radius: 6px;
   margin: 1em 0;
   border: 1px solid var(--color-obs-border);
+}
+
+.tiptap .wiki-embed-full .wiki-embed-body {
+  padding: 0;
+}
+
+.tiptap .wiki-embed-content {
+  padding: 0.75em 1em;
+  font-size: 0.9em;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.tiptap .wiki-embed-content .wiki-embed {
+  margin: 0.5em 0;
+  font-size: 0.95em;
+}
+
+.tiptap .wiki-embed-recursive {
+  font-style: italic;
+  color: var(--color-obs-text-faint);
+}
+
+.tiptap .mermaid-diagram {
+  margin: 1.5em 0;
+  padding: 1em;
+  border-radius: 8px;
+  border: 1px solid var(--color-obs-border);
+  background: var(--color-obs-bg-secondary);
+  overflow-x: auto;
+}
+
+.tiptap .mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.tiptap .mermaid-error {
+  color: #f44336;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.tiptap pre code.hljs {
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .graph-container canvas {

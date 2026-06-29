@@ -74,6 +74,10 @@ function serializeNode(node: ChildNode): string {
         .map((l) => `> ${l}`)
         .join("\n") ?? "";
     case "div": {
+      if (el.classList.contains("mermaid-diagram")) {
+        const source = el.getAttribute("data-mermaid-source") ?? el.textContent?.trim() ?? "";
+        return "```mermaid\n" + source + "\n```";
+      }
       if (el.classList.contains("callout")) {
         const type = el.getAttribute("data-callout-type") ?? "note";
         const title = el.querySelector(".callout-title")?.textContent?.trim() ?? "";
