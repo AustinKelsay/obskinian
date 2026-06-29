@@ -69,9 +69,10 @@ export function renderReadingHtml(body: string, options?: MarkdownToHtmlOptions)
   return restoreObsidianSyntax(standardHtml, snippets, options);
 }
 
-/** Cycles editor mode: live → source → reading → live */
+/** Cycles editor mode: live → source → split → reading → live */
 export function cycleEditorMode(current: EditorMode): EditorMode {
   if (current === "live") return "source";
-  if (current === "source") return "reading";
+  if (current === "source") return "split";
+  if (current === "split") return "reading";
   return "live";
 }

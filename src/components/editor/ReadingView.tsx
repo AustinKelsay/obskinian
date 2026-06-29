@@ -5,6 +5,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import { useVaultStore } from "@/lib/vault/vault-store";
 import { createEmbedResolvers } from "@/lib/vault/embed-resolvers";
 import { renderReadingHtml } from "@/lib/markdown/pipeline";
@@ -13,10 +14,14 @@ import { EditorHydrator } from "./EditorHydrator";
 interface ReadingViewProps {
   fileId: string;
   content: string;
+  /** Full-width layout for split preview pane */
+  layout?: "default" | "split";
+  /** Optional ref for the scroll container (split preview sync) */
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 /** Non-editable rendered markdown view (Obsidian reading mode) */
-export function ReadingView({ fileId, content }: ReadingViewProps) {
+export function ReadingView({ fileId, content, layout = "default", scrollRef }: ReadingViewProps) {
   const vault = useVaultStore((s) => s.vault);
   const openFileByLink = useVaultStore((s) => s.openFileByLink);
   const scrollToHeadingId = useVaultStore((s) => s.scrollToHeadingId);
@@ -87,11 +92,14 @@ export function ReadingView({ fileId, content }: ReadingViewProps) {
   }, [scrollToBlockId, clearScrollToBlock]);
 
   return (
-    <div className="relative h-full overflow-y-auto bg-obs-bg">
+    <div ref={scrollRef} className="relative h-full overflow-y-auto bg-obs-bg">
       <EditorHydrator containerRef={containerRef} hydrateKey={hydrateKey} />
       <div
         ref={containerRef}
-        className="tiptap reading-view mx-auto max-w-[720px] px-8 py-8"
+        className={cn(
+          "tiptap reading-view py-8",
+          layout === "split" ? "px-4" : "mx-auto max-w-[720px] px-8"
+        )}
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </div>

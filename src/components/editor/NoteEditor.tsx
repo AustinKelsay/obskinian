@@ -5,7 +5,7 @@
 
 "use client";
 
-import { Eye, Code, Columns2, Rows2, X, Download, BookOpen } from "lucide-react";
+import { Eye, Code, Columns2, Rows2, X, Download, BookOpen, PanelsLeftRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { EditorMode } from "@/lib/vault/types";
 import { useVaultStore } from "@/lib/vault/vault-store";
@@ -13,6 +13,7 @@ import { downloadNoteAsHtml } from "@/lib/export";
 import { WysiwygEditor } from "./WysiwygEditor";
 import { SourceEditor } from "./SourceEditor";
 import { ReadingView } from "./ReadingView";
+import { SplitEditor } from "./SplitEditor";
 
 interface NoteEditorProps {
   paneId: string;
@@ -27,6 +28,7 @@ export function NoteEditor({ paneId, fileId, content, frontmatter = {}, isActive
   const {
     panes,
     splitDirection,
+    vault,
     setPaneEditorMode,
     setActivePane,
     splitPane,
@@ -75,6 +77,20 @@ export function NoteEditor({ paneId, fileId, content, frontmatter = {}, isActive
         </button>
         <button
           type="button"
+          title="Split preview (source + reading)"
+          onClick={() => setPaneEditorMode(paneId, "split")}
+          className={cn(
+            "flex h-6 items-center gap-1 rounded px-2 text-[11px] transition-colors",
+            editorMode === "split"
+              ? "bg-obs-accent/20 text-obs-accent"
+              : "text-obs-text-muted hover:text-obs-text"
+          )}
+        >
+          <PanelsLeftRight size={12} />
+          Split
+        </button>
+        <button
+          type="button"
           title="Reading mode"
           onClick={() => setPaneEditorMode(paneId, "reading")}
           className={cn(
@@ -95,7 +111,8 @@ export function NoteEditor({ paneId, fileId, content, frontmatter = {}, isActive
           title="Export as HTML"
           onClick={() => downloadNoteAsHtml(
             useVaultStore.getState().getPaneFile(paneId)?.path ?? `${fileId}.md`,
-            content
+            content,
+            vault
           )}
           className="flex h-6 w-6 items-center justify-center rounded text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
         >
@@ -141,6 +158,9 @@ export function NoteEditor({ paneId, fileId, content, frontmatter = {}, isActive
         )}
         {editorMode === "source" && (
           <SourceEditor fileId={fileId} content={content} frontmatter={frontmatter} />
+        )}
+        {editorMode === "split" && (
+          <SplitEditor fileId={fileId} content={content} frontmatter={frontmatter} />
         )}
         {editorMode === "reading" && (
           <ReadingView fileId={fileId} content={content} />

@@ -67,6 +67,7 @@ export function CommandPalette() {
     getActiveFile,
     recentFileIds,
     setTemplatePickerOpen,
+    vault,
   } = useVaultStore();
 
   const [query, setQuery] = useState("");
@@ -92,7 +93,7 @@ export function CommandPalette() {
       { id: "split-h", label: "Split pane horizontally", group: "Pane", icon: Zap, action: () => splitPane("horizontal") },
       {
         id: "toggle-source",
-        label: "Cycle editor mode (live / source / reading)",
+        label: "Cycle editor mode (live / source / split / reading)",
         group: "Editor",
         icon: Code,
         action: () => {
@@ -107,7 +108,7 @@ export function CommandPalette() {
               label: "Export note as HTML",
               group: "Notes",
               icon: Download,
-              action: () => downloadNoteAsHtml(activeFile.path, activeFile.content),
+              action: () => downloadNoteAsHtml(activeFile.path, activeFile.content, vault),
             },
             {
               id: "delete-note",
@@ -119,7 +120,7 @@ export function CommandPalette() {
           ]
         : []),
     ],
-    [activeFile, activePane, activePaneId, createNote, createFolder, setLeftPanel, setViewMode, splitPane, setPaneEditorMode, setTemplatePickerOpen]
+    [activeFile, activePane, activePaneId, createNote, createFolder, setLeftPanel, setViewMode, splitPane, setPaneEditorMode, setTemplatePickerOpen, vault]
   );
 
   const recentItems: PaletteItem[] = useMemo(() => {

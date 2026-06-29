@@ -31,7 +31,7 @@ A **skin-deep front-end clone** of [Obsidian](https://obsidian.md) — built as 
 | Shortcut | Action |
 |---|---|
 | `⌘P` / `Ctrl+P` | Command palette |
-| `⌘E` / `Ctrl+E` | Cycle live / source / reading mode |
+| `⌘E` / `Ctrl+E` | Cycle live / source / split / reading mode |
 | `⌘N` / `Ctrl+N` | Create new note |
 | `⌘W` / `Ctrl+W` | Close active tab |
 | `⌘G` / `Ctrl+G` | Open graph view |
@@ -92,6 +92,12 @@ A **skin-deep front-end clone** of [Obsidian](https://obsidian.md) — built as 
 - **Unified markdown pipeline** — remark/rehype with GFM tables and LaTeX math (KaTeX)
 - **Editor mode cycle** — `⌘E` / toolbar cycles Live → Source → Reading
 - **TipTap headings H4–H6** — extended heading support in live editor
+
+### Phase 11
+- **Split preview** — side-by-side source editor + reading preview with draggable divider
+- **Scroll sync** — source scroll position maps to the reading preview in split mode
+- **Line numbers** — gutter in source and split modes for easier navigation
+- **Export pipeline** — HTML export uses the same remark/KaTeX renderer as reading mode
 
 ## Getting Started
 
