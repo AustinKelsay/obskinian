@@ -120,7 +120,12 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
       Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder: "Start writing... (type / for commands)" }),
       TaskList,
-      TaskItem.configure({ nested: true }),
+      TaskItem.configure({
+        nested: true,
+        HTMLAttributes: {
+          class: "task-list-item",
+        },
+      }),
     ],
     content: initialHtml,
     editorProps: {

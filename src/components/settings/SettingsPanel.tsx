@@ -16,6 +16,7 @@ import {
 } from "@/lib/preferences";
 import { ACCENT_COLORS, type AccentColor } from "@/lib/theme";
 import { pluginRegistry } from "@/lib/plugins/registry";
+import { Toggle } from "@/components/ui/Toggle";
 
 /** Left sidebar settings panel */
 export function SettingsPanel() {
@@ -84,14 +85,22 @@ export function SettingsPanel() {
             Daily Notes
           </div>
 
-          <label className="mb-2 flex cursor-pointer items-center justify-between py-1">
-            <span className="text-[13px] text-obs-text-muted">Enable daily notes</span>
-            <Toggle checked={prefs.dailyNotesEnabled} onChange={(v) => update({ dailyNotesEnabled: v })} />
+          <label className="obs-setting-row mb-2 cursor-pointer">
+            <span>Enable daily notes</span>
+            <Toggle
+              checked={prefs.dailyNotesEnabled}
+              onChange={(v) => update({ dailyNotesEnabled: v })}
+              label="Enable daily notes"
+            />
           </label>
 
-          <label className="mb-2 flex cursor-pointer items-center justify-between py-1">
-            <span className="text-[13px] text-obs-text-muted">Open on startup</span>
-            <Toggle checked={prefs.openDailyNoteOnStartup} onChange={(v) => update({ openDailyNoteOnStartup: v })} />
+          <label className="obs-setting-row mb-2 cursor-pointer">
+            <span>Open on startup</span>
+            <Toggle
+              checked={prefs.openDailyNoteOnStartup}
+              onChange={(v) => update({ openDailyNoteOnStartup: v })}
+              label="Open daily note on startup"
+            />
           </label>
 
           <div className="mt-2">
@@ -110,9 +119,13 @@ export function SettingsPanel() {
             <Clock size={14} className="text-obs-accent" />
             Command Palette
           </div>
-          <label className="flex cursor-pointer items-center justify-between py-1">
-            <span className="text-[13px] text-obs-text-muted">Show recent files</span>
-            <Toggle checked={prefs.showRecentInPalette} onChange={(v) => update({ showRecentInPalette: v })} />
+          <label className="obs-setting-row cursor-pointer">
+            <span>Show recent files</span>
+            <Toggle
+              checked={prefs.showRecentInPalette}
+              onChange={(v) => update({ showRecentInPalette: v })}
+              label="Show recent files in command palette"
+            />
           </label>
         </section>
 
@@ -121,11 +134,12 @@ export function SettingsPanel() {
             <Layout size={14} className="text-obs-accent" />
             Workspace
           </div>
-          <label className="flex cursor-pointer items-center justify-between py-1">
-            <span className="text-[13px] text-obs-text-muted">Restore layout on load</span>
+          <label className="obs-setting-row cursor-pointer">
+            <span>Restore layout on load</span>
             <Toggle
               checked={prefs.restoreWorkspaceOnLoad}
               onChange={(v) => update({ restoreWorkspaceOnLoad: v })}
+              label="Restore workspace layout on load"
             />
           </label>
           <p className="mt-1 text-[11px] text-obs-text-faint">
@@ -158,16 +172,16 @@ export function SettingsPanel() {
           {plugins.map((plugin) => (
             <div
               key={plugin.id}
-              className="mb-1 flex items-start gap-3 rounded-md px-2 py-2 hover:bg-obs-interactive-hover"
+              className="mb-1 flex items-center gap-3 rounded-sm px-2 py-2 hover:bg-obs-interactive-hover"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-[13px] text-obs-text">{plugin.name}</span>
                   <span className="text-[10px] text-obs-text-faint">v{plugin.version}</span>
                 </div>
-                <p className="text-[11px] text-obs-text-muted">{plugin.description}</p>
+                <p className="text-[11px] leading-snug text-obs-text-muted">{plugin.description}</p>
               </div>
-              <Toggle checked disabled onChange={() => {}} />
+              <Toggle checked disabled onChange={() => {}} label={`${plugin.name} enabled`} />
             </div>
           ))}
         </section>
@@ -201,39 +215,6 @@ function ThemeButton({
     >
       {icon}
       {label}
-    </button>
-  );
-}
-
-/** Toggle switch matching Obsidian settings style */
-function Toggle({
-  checked,
-  onChange,
-  disabled,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      disabled={disabled}
-      onClick={() => onChange(!checked)}
-      className={cn(
-        "relative h-5 w-9 shrink-0 rounded-full transition-colors",
-        checked ? "bg-obs-accent" : "bg-obs-interactive",
-        disabled && "opacity-50"
-      )}
-    >
-      <span
-        className={cn(
-          "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform",
-          checked ? "translate-x-4" : "translate-x-0.5"
-        )}
-      />
     </button>
   );
 }

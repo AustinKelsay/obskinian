@@ -41,30 +41,30 @@ export function StatusBar() {
   const chars = activeFile ? countCharacters(activeFile.content) : 0;
 
   return (
-    <div className="flex h-[22px] shrink-0 items-center justify-between border-t border-obs-border bg-obs-bg-secondary px-3 text-[11px] text-obs-text-faint">
-      <div className="flex items-center gap-2">
-        <span>Demo Vault</span>
-        <span className="text-obs-border-light">|</span>
-        <span>{fileCount} notes</span>
+    <div className="flex h-[22px] shrink-0 items-center justify-between gap-2 border-t border-obs-border bg-obs-bg-secondary px-2 text-[11px] text-obs-text-faint sm:px-3">
+      <div className="flex min-w-0 items-center gap-2 truncate">
+        <span className="truncate">Demo Vault</span>
+        <span className="hidden text-obs-border-light sm:inline">|</span>
+        <span className="hidden shrink-0 sm:inline">{fileCount} notes</span>
         {viewMode === "graph" && (
           <>
-            <span className="text-obs-border-light">|</span>
-            <span>{graphStats.nodes} nodes</span>
-            <span className="text-obs-border-light">|</span>
-            <span>{graphStats.links} links</span>
+            <span className="hidden text-obs-border-light md:inline">|</span>
+            <span className="hidden shrink-0 md:inline">{graphStats.nodes} nodes</span>
+            <span className="hidden text-obs-border-light lg:inline">|</span>
+            <span className="hidden shrink-0 lg:inline">{graphStats.links} links</span>
           </>
         )}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {viewMode === "editor" && activeFile && (
           <>
-            <span>{words} words</span>
-            <span className="text-obs-border-light">|</span>
-            <span>{chars} characters</span>
-            <span className="text-obs-border-light">|</span>
+            <span className="hidden md:inline">{words} words</span>
+            <span className="hidden text-obs-border-light lg:inline">|</span>
+            <span className="hidden lg:inline">{chars} characters</span>
+            <span className="hidden text-obs-border-light xl:inline">|</span>
           </>
         )}
-        <span>Obskinian v0.1</span>
+        <span className="hidden sm:inline">Obskinian v0.1</span>
       </div>
     </div>
   );

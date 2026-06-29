@@ -7,11 +7,14 @@
 
 import { useVaultStore } from "@/lib/vault/vault-store";
 import { NoteEditor } from "@/components/editor/NoteEditor";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 
 /** Multi-pane editor area with split support */
 export function EditorArea() {
   const { panes, splitDirection, activePaneId, getPaneFile } = useVaultStore();
+  const isMobile = useIsMobile();
+  const effectiveSplit = isMobile && splitDirection === "vertical" ? "horizontal" : splitDirection;
 
   if (panes.length === 1) {
     const pane = panes[0];
@@ -32,7 +35,7 @@ export function EditorArea() {
     <div
       className={cn(
         "flex h-full flex-1 overflow-hidden",
-        splitDirection === "vertical" ? "flex-row" : "flex-col"
+        effectiveSplit === "vertical" ? "flex-col md:flex-row" : "flex-col"
       )}
     >
       {panes.map((pane) => {
@@ -42,7 +45,9 @@ export function EditorArea() {
             key={pane.id}
             className={cn(
               "flex-1 overflow-hidden",
-              splitDirection === "vertical" ? "border-r border-obs-border last:border-r-0" : "border-b border-obs-border last:border-b-0"
+              effectiveSplit === "vertical"
+                ? "border-b border-obs-border md:border-b-0 md:border-r md:last:border-r-0"
+                : "border-b border-obs-border last:border-b-0"
             )}
           >
             {file ? (

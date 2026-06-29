@@ -82,6 +82,69 @@ body {
   border-radius: 4px;
 }
 
+/* Settings rows — label left, control right, vertically centered */
+.obs-setting-row {
+  display: flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.375rem 0;
+}
+
+.obs-setting-row > span:first-child {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--color-obs-text-muted);
+}
+
+/* Obsidian-style toggle switch */
+.obs-toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  transition: background-color 0.15s;
+}
+
+.obs-toggle[data-checked="true"] {
+  background: var(--color-obs-accent);
+}
+
+.obs-toggle[data-checked="false"] {
+  background: var(--color-obs-interactive);
+}
+
+.obs-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  background: #eaeaea;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 25%);
+  transition: transform 0.15s;
+}
+
+.obs-toggle[data-checked="true"] .obs-toggle-thumb {
+  transform: translateX(1rem);
+}
+
+/* Source editor line gutter alignment */
+.source-line-gutter {
+  font-size: 13px;
+  line-height: 1.625;
+}
+
+.source-editor-textarea {
+  font-size: 13px;
+  line-height: 1.625;
+}
+
 ::selection {
   background: var(--color-obs-selection);
 }
@@ -93,6 +156,22 @@ body {
   max-width: 720px;
   margin: 0 auto;
   caret-color: var(--color-obs-text);
+  line-height: 1.625;
+}
+
+@media (max-width: 767px) {
+  .tiptap,
+  .reading-view {
+    padding: 1rem 1.25rem;
+    max-width: none;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tiptap,
+  .reading-view {
+    padding: 1.5rem 2rem;
+  }
 }
 
 .tiptap p.is-editor-empty:first-child::before {
@@ -125,8 +204,35 @@ body {
   margin: 1em 0 0.3em;
 }
 
+.tiptap h4 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 0.9em 0 0.25em;
+}
+
+.tiptap h5 {
+  font-size: 1em;
+  font-weight: 600;
+  margin: 0.8em 0 0.2em;
+}
+
+.tiptap h6 {
+  font-size: 0.9em;
+  font-weight: 600;
+  margin: 0.8em 0 0.2em;
+  color: var(--color-obs-text-muted);
+}
+
 .tiptap p {
   margin: 0.75em 0;
+}
+
+.tiptap li > p {
+  margin: 0;
+}
+
+.tiptap li > p + p {
+  margin-top: 0.5em;
 }
 
 .tiptap ul,
@@ -139,26 +245,86 @@ body {
   margin: 0.25em 0;
 }
 
-.tiptap ul[data-type="taskList"] {
+.tiptap ul[data-type="taskList"],
+.reading-view ul.contains-task-list {
   list-style: none;
   padding-left: 0;
+  margin: 0.75em 0;
 }
 
-.tiptap ul[data-type="taskList"] li {
+.tiptap ul[data-type="taskList"] > li,
+.reading-view li.task-list-item {
   display: flex;
   align-items: flex-start;
-  gap: 0.5em;
+  gap: 0.625rem;
+  margin: 0.125rem 0;
+  min-height: 1.625rem;
 }
 
-.tiptap ul[data-type="taskList"] li label {
-  display: flex;
+.tiptap ul[data-type="taskList"] li[data-type="taskItem"] > label,
+.reading-view li.task-list-item > label {
+  flex-shrink: 0;
+  display: inline-flex;
   align-items: center;
-  margin-top: 0.2em;
+  justify-content: center;
+  margin: 0;
+  padding: 0.1875rem 0 0;
+  line-height: 1;
+  user-select: none;
 }
 
-.tiptap ul[data-type="taskList"] li input[type="checkbox"] {
-  accent-color: var(--color-obs-accent);
+.tiptap ul[data-type="taskList"] li[data-type="taskItem"] > div,
+.reading-view li.task-list-item > .task-list-item-content,
+.reading-view li.task-list-item:not(:has(> label)) {
+  flex: 1;
+  min-width: 0;
+  padding-top: 0.0625rem;
+}
+
+.tiptap ul[data-type="taskList"] li[data-type="taskItem"] > div > p,
+.reading-view li.task-list-item > p {
+  margin: 0;
+  line-height: 1.625;
+}
+
+.tiptap ul[data-type="taskList"] li[data-type="taskItem"][data-checked="true"] > div,
+.reading-view li.task-list-item:has(input[type="checkbox"]:checked) {
+  color: var(--color-obs-text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-obs-text-faint);
+}
+
+.tiptap ul[data-type="taskList"] li input[type="checkbox"],
+.reading-view li.task-list-item input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  border: 1.5px solid var(--color-obs-border-light);
+  border-radius: 3px;
+  background: var(--color-obs-bg);
   cursor: pointer;
+  flex-shrink: 0;
+  vertical-align: middle;
+  position: relative;
+  top: 0;
+}
+
+.tiptap ul[data-type="taskList"] li input[type="checkbox"]:checked,
+.reading-view li.task-list-item input[type="checkbox"]:checked {
+  background-color: var(--color-obs-accent);
+  border-color: var(--color-obs-accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.5 8.5L6.5 11.5L12.5 4.5' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: 11px 11px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.tiptap ul[data-type="taskList"] li input[type="checkbox"]:focus-visible,
+.reading-view li.task-list-item input[type="checkbox"]:focus-visible {
+  outline: 1px solid var(--color-obs-accent);
+  outline-offset: 1px;
 }
 
 .tiptap blockquote {
@@ -354,19 +520,42 @@ body {
 }
 
 .reading-view table {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
   border-collapse: collapse;
   margin: 1em 0;
   font-size: 0.9em;
 }
 
+.reading-view table thead,
+.reading-view table tbody,
+.reading-view table tr {
+  width: 100%;
+}
+
+.tiptap table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.9em;
+}
+
+.tiptap th,
+.tiptap td,
 .reading-view th,
 .reading-view td {
   border: 1px solid var(--color-obs-border);
   padding: 0.5em 0.75em;
   text-align: left;
+  vertical-align: top;
 }
 
+.tiptap th,
 .reading-view th {
   background: var(--color-obs-bg-secondary);
   font-weight: 600;

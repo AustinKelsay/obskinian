@@ -1,6 +1,6 @@
 /**
  * Side-by-side source editor and reading preview (Obsidian split preview).
- * Supports draggable divider and proportional scroll sync.
+ * Stacks vertically on narrow viewports; draggable divider on desktop.
  */
 
 "use client";
@@ -8,6 +8,7 @@
 import { useCallback, useRef } from "react";
 import type { FrontmatterValue } from "@/lib/vault/frontmatter";
 import { useHorizontalSplit } from "@/hooks/use-horizontal-split";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { SourceEditor } from "./SourceEditor";
 import { ReadingView } from "./ReadingView";
@@ -20,6 +21,7 @@ interface SplitEditorProps {
 
 /** Source + rendered preview in a resizable split layout */
 export function SplitEditor({ fileId, content, frontmatter = {} }: SplitEditorProps) {
+  const isMobile = useIsMobile();
   const previewRef = useRef<HTMLDivElement>(null);
   const isSyncingScroll = useRef(false);
 
@@ -40,6 +42,25 @@ export function SplitEditor({ fileId, content, frontmatter = {} }: SplitEditorPr
       isSyncingScroll.current = false;
     });
   }, []);
+
+  if (isMobile) {
+    return (
+      <div className="flex h-full flex-col overflow-hidden">
+        <div className="h-1/2 min-h-0 overflow-hidden border-b border-obs-border">
+          <SourceEditor
+            fileId={fileId}
+            content={content}
+            frontmatter={frontmatter}
+            layout="split"
+            showLineNumbers
+          />
+        </div>
+        <div className="h-1/2 min-h-0 overflow-hidden">
+          <ReadingView fileId={fileId} content={content} layout="split" scrollRef={previewRef} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} className="flex h-full overflow-hidden">

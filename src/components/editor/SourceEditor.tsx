@@ -30,7 +30,7 @@ interface SourceEditorProps {
   onScrollRatioChange?: (ratio: number) => void;
 }
 
-const LINE_HEIGHT_PX = 20.8;
+const LINE_HEIGHT = 1.625;
 
 /** Monospace markdown source editor */
 export function SourceEditor({
@@ -79,7 +79,7 @@ export function SourceEditor({
       return id === scrollToHeadingId;
     });
     if (idx >= 0) {
-      textareaRef.current.scrollTop = idx * LINE_HEIGHT_PX;
+      textareaRef.current.scrollTop = idx * 13 * LINE_HEIGHT;
     }
     clearScrollToHeading();
   }, [scrollToHeadingId, content, clearScrollToHeading]);
@@ -90,7 +90,7 @@ export function SourceEditor({
     const lines = rawContent.split("\n");
     const idx = lines.findIndex((line) => new RegExp(`\\^${blockSuffix}\\s*$`).test(line));
     if (idx >= 0) {
-      textareaRef.current.scrollTop = idx * LINE_HEIGHT_PX;
+      textareaRef.current.scrollTop = idx * 13 * LINE_HEIGHT;
     }
     clearScrollToBlock();
   }, [scrollToBlockId, rawContent, clearScrollToBlock]);
@@ -221,12 +221,10 @@ export function SourceEditor({
         <div
           ref={gutterRef}
           aria-hidden
-          className="source-line-gutter shrink-0 overflow-hidden border-r border-obs-border bg-obs-bg-secondary py-8 pl-3 pr-2 text-right font-mono text-[11px] leading-[1.6] text-obs-text-faint select-none"
+          className="source-line-gutter shrink-0 overflow-hidden border-r border-obs-border bg-obs-bg-secondary py-8 pl-3 pr-2 text-right font-mono text-[11px] text-obs-text-faint select-none"
         >
           {lineNumbers.map((line) => (
-            <div key={line} style={{ height: LINE_HEIGHT_PX }}>
-              {line}
-            </div>
+            <div key={line}>{line}</div>
           ))}
         </div>
       )}
@@ -239,7 +237,7 @@ export function SourceEditor({
         onScroll={handleScroll}
         spellCheck={false}
         className={cn(
-          "h-full w-full resize-none bg-obs-bg py-8 font-mono text-[13px] leading-relaxed text-obs-text outline-none",
+          "source-editor-textarea h-full w-full resize-none bg-obs-bg py-8 font-mono text-[13px] text-obs-text outline-none",
           layout === "split" ? "px-4" : "max-w-[720px] mx-auto block px-8"
         )}
         placeholder="Write markdown... (type / for commands)"

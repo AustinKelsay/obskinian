@@ -118,19 +118,28 @@ export function AppShell() {
         )}
 
         {isLeftSidebarOpen && leftPanel !== "graph" && (
+          isMobile ? (
+            <div
+              className={cn(
+                "absolute inset-y-0 left-[44px] z-30 flex w-[min(calc(100vw-44px),320px)] flex-col border-r border-obs-border bg-obs-sidebar shadow-xl"
+              )}
+            >
+              {leftPanel === "explorer" && <FileExplorer />}
+              {leftPanel === "search" && <SearchPanel />}
+              {leftPanel === "settings" && <SettingsPanel />}
+            </div>
+          ) : (
           <ResizablePanel
             side="left"
             defaultWidth={260}
             storageKey="obskinian-left-sidebar"
-            className={cn(
-              "z-30 border-r border-obs-border bg-obs-sidebar",
-              isMobile && "absolute inset-y-0 left-[44px] shadow-xl"
-            )}
+            className="z-30 border-r border-obs-border bg-obs-sidebar"
           >
             {leftPanel === "explorer" && <FileExplorer />}
             {leftPanel === "search" && <SearchPanel />}
             {leftPanel === "settings" && <SettingsPanel />}
           </ResizablePanel>
+          )
         )}
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -174,18 +183,21 @@ export function AppShell() {
         </div>
 
         {isRightSidebarOpen && (
+          isMobile ? (
+            <div className="absolute inset-y-0 right-0 z-30 flex w-[min(100vw,360px)] flex-col border-l border-obs-border bg-obs-sidebar shadow-xl">
+              <RightSidebar className="h-full w-full" />
+            </div>
+          ) : (
           <ResizablePanel
             side="right"
             defaultWidth={280}
             minWidth={220}
             storageKey="obskinian-right-sidebar"
-            className={cn(
-              "z-30 bg-obs-sidebar",
-              isMobile && "absolute inset-y-0 right-0 shadow-xl"
-            )}
+            className="z-30 bg-obs-sidebar"
           >
             <RightSidebar className="h-full w-full" />
           </ResizablePanel>
+          )
         )}
       </div>
 
