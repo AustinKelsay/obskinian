@@ -5,9 +5,16 @@
 
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useVaultStore } from "@/lib/vault/vault-store";
+import { SlashCommandMenu } from "./SlashCommandMenu";
+import {
+  applySourceSlashCommand,
+  detectSlashQuery,
+  filterSlashCommands,
+  type SlashCommand,
+} from "@/lib/editor/slash-commands";
 
 interface SourceEditorProps {
   fileId: string;
@@ -21,6 +28,12 @@ export function SourceEditor({ fileId, content }: SourceEditorProps) {
   const clearScrollToHeading = useVaultStore((s) => s.clearScrollToHeading);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [slashOpen, setSlashOpen] = useState(false);
+  const [slashQuery, setSlashQuery] = useState("");
+  const [slashIndex, setSlashIndex] = useState(0);
+
+  const slashCommands = filterSlashCommands(slashQuery);
 
   useEffect(() => {
     if (textareaRef.current && textareaRef.current.value !== content) {
@@ -44,39 +57,111 @@ export function SourceEditor({ fileId, content }: SourceEditorProps) {
     clearScrollToHeading();
   }, [scrollToHeadingId, content, clearScrollToHeading]);
 
+  useEffect(() => {
+    setSlashIndex(0);
+  }, [slashQuery]);
+
+  const detectSlash = useCallback((value: string, cursorPos: number) => {
+    const textBefore = value.substring(0, cursorPos);
+    const query = detectSlashQuery(textBefore);
+    if (query !== null) {
+      setSlashOpen(true);
+      setSlashQuery(query);
+    } else {
+      setSlashOpen(false);
+      setSlashQuery("");
+    }
+  }, []);
+
+  const applySlash = useCallback(
+    (cmd: SlashCommand) => {
+      const ta = textareaRef.current;
+      if (!ta) return;
+
+      const { value, cursorPos } = applySourceSlashCommand(ta.value, ta.selectionStart, cmd);
+      ta.value = value;
+      ta.selectionStart = ta.selectionEnd = cursorPos;
+      updateContent(fileId, value);
+      setSlashOpen(false);
+      setSlashQuery("");
+      setSlashIndex(0);
+    },
+    [fileId, updateContent]
+  );
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      detectSlash(e.target.value, e.target.selectionStart);
+
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
         updateContent(fileId, e.target.value);
       }, 300);
     },
-    [fileId, updateContent]
+    [fileId, updateContent, detectSlash]
   );
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Tab") {
-      e.preventDefault();
-      const ta = e.currentTarget;
-      const start = ta.selectionStart;
-      const end = ta.selectionEnd;
-      ta.value = ta.value.substring(0, start) + "  " + ta.value.substring(end);
-      ta.selectionStart = ta.selectionEnd = start + 2;
-    }
-  }, []);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (slashOpen && slashCommands.length > 0) {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setSlashIndex((i) => Math.min(i + 1, slashCommands.length - 1));
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setSlashIndex((i) => Math.max(i - 1, 0));
+          return;
+        }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          applySlash(slashCommands[slashIndex]);
+          return;
+        }
+        if (e.key === "Escape") {
+          e.preventDefault();
+          setSlashOpen(false);
+          setSlashQuery("");
+          return;
+        }
+      }
+
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const ta = e.currentTarget;
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        ta.value = ta.value.substring(0, start) + "  " + ta.value.substring(end);
+        ta.selectionStart = ta.selectionEnd = start + 2;
+      }
+    },
+    [slashOpen, slashCommands, slashIndex, applySlash]
+  );
 
   return (
-    <textarea
-      ref={textareaRef}
-      defaultValue={content}
-      onChange={handleChange}
-      onKeyDown={handleKeyDown}
-      spellCheck={false}
-      className={cn(
-        "h-full w-full resize-none bg-obs-bg p-8 font-mono text-[13px] leading-relaxed text-obs-text outline-none",
-        "max-w-[720px] mx-auto block"
+    <div className="relative h-full">
+      {slashOpen && slashCommands.length > 0 && (
+        <SlashCommandMenu
+          commands={slashCommands}
+          selectedIndex={slashIndex}
+          onSelect={applySlash}
+          onHover={setSlashIndex}
+          position={{ top: 8, left: 48 }}
+        />
       )}
-      placeholder="Write markdown..."
-    />
+      <textarea
+        ref={textareaRef}
+        defaultValue={content}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        spellCheck={false}
+        className={cn(
+          "h-full w-full resize-none bg-obs-bg p-8 font-mono text-[13px] leading-relaxed text-obs-text outline-none",
+          "max-w-[720px] mx-auto block"
+        )}
+        placeholder="Write markdown... (type / for commands)"
+      />
+    </div>
   );
 }

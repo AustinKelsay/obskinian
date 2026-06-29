@@ -10,6 +10,8 @@ export interface UserPreferences {
   showRecentInPalette: boolean;
   theme: import("./theme").ThemeMode;
   accent: import("./theme").AccentColor;
+  customCss: string;
+  restoreWorkspaceOnLoad: boolean;
 }
 
 const STORAGE_KEY = "obskinian-preferences";
@@ -21,6 +23,8 @@ const DEFAULTS: UserPreferences = {
   showRecentInPalette: true,
   theme: "dark",
   accent: "purple",
+  customCss: "",
+  restoreWorkspaceOnLoad: true,
 };
 
 /** Loads preferences from localStorage */
@@ -47,7 +51,23 @@ export function savePreferences(prefs: Partial<UserPreferences>): UserPreference
     });
   }
 
+  if (prefs.customCss !== undefined) {
+    applyCustomCss(next.customCss);
+  }
+
   return next;
+}
+
+/** Applies custom CSS snippet to the document */
+export function applyCustomCss(css: string): void {
+  if (typeof document === "undefined") return;
+  let el = document.getElementById("obskinian-custom-css");
+  if (!el) {
+    el = document.createElement("style");
+    el.id = "obskinian-custom-css";
+    document.head.appendChild(el);
+  }
+  el.textContent = css;
 }
 
 /** Returns today's date string in YYYY-MM-DD format */

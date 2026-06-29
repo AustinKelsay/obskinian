@@ -37,6 +37,11 @@ import { filterGraphByMode, filterGraphByText } from "./graph-utils";
 import { processTemplateContent } from "./templates";
 import { getFileDisplayName, pathToId } from "../utils";
 import { pluginRegistry } from "../plugins/registry";
+import {
+  buildWorkspaceSnapshot,
+  loadWorkspace,
+  saveWorkspace,
+} from "../workspace";
 const RECENT_KEY = "obskinian-recent-files";
 const MAX_RECENT = 10;
 
@@ -673,7 +678,7 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   },
 }));
 
-/** Loads vault from disk and opens Welcome.md */
+/** Loads vault from disk and restores workspace or opens Welcome.md */
 export async function initializeVault() {
   useVaultStore.setState({ recentFileIds: loadRecentFiles() });
 
@@ -681,13 +686,62 @@ export async function initializeVault() {
   await store.loadVault();
 
   const { maybeOpenDailyNoteOnStartup } = await import("@/lib/plugins/daily-notes");
-  await maybeOpenDailyNoteOnStartup();
+  const { loadPreferences } = await import("@/lib/preferences");
+  const prefs = loadPreferences();
+
+  if (prefs.openDailyNoteOnStartup) {
+    await maybeOpenDailyNoteOnStartup();
+  }
 
   const state = useVaultStore.getState();
   if (state.tabs.length > 0) return;
 
+  if (prefs.restoreWorkspaceOnLoad) {
+    const workspace = loadWorkspace();
+    if (workspace && workspace.openTabFileIds.length > 0) {
+      restoreWorkspace(workspace);
+      return;
+    }
+  }
+
   const welcome = state.getAllFiles().find((f) => f.path === "Welcome.md");
   if (welcome) state.openFile(welcome.id);
+}
+
+/** Restores sidebar and tab state from a workspace snapshot */
+function restoreWorkspace(snapshot: import("../workspace").WorkspaceSnapshot): void {
+  const store = useVaultStore.getState();
+  const files = store.getAllFiles();
+  const fileIds = new Set(files.map((f) => f.id));
+
+  useVaultStore.setState({
+    leftPanel: snapshot.leftPanel,
+    rightPanel: snapshot.rightPanel,
+    isLeftSidebarOpen: snapshot.isLeftSidebarOpen,
+    isRightSidebarOpen: snapshot.isRightSidebarOpen,
+  });
+
+  for (const fileId of snapshot.openTabFileIds) {
+    if (fileIds.has(fileId)) store.openFile(fileId);
+  }
+
+  if (snapshot.activeTabFileId) {
+    const tab = useVaultStore.getState().tabs.find((t) => t.fileId === snapshot.activeTabFileId);
+    if (tab) store.setActiveTab(tab.id);
+  }
+}
+
+/** Subscribes to store changes and persists workspace layout */
+export function subscribeWorkspacePersistence(): () => void {
+  let debounce: ReturnType<typeof setTimeout> | null = null;
+
+  return useVaultStore.subscribe((state) => {
+    if (!state.isVaultLoaded) return;
+    if (debounce) clearTimeout(debounce);
+    debounce = setTimeout(() => {
+      saveWorkspace(buildWorkspaceSnapshot(state));
+    }, 500);
+  });
 }
 
 /** Finds any vault node by id */

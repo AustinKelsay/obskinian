@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import type { RightPanel } from "@/lib/vault/types";
 import { useVaultStore } from "@/lib/vault/vault-store";
 import { extractHeadings, extractTags, findBacklinks } from "@/lib/vault/link-parser";
+import { BacklinkItem } from "@/components/backlinks/BacklinkItem";
 
 /** Right sidebar with tabbed panels */
 export function RightSidebar({ className }: { className?: string }) {
@@ -106,15 +107,12 @@ export function RightSidebar({ className }: { className?: string }) {
               <p className="px-3 py-4 text-[13px] text-obs-text-faint">No note open.</p>
             )}
             {backlinks.map((bl) => (
-              <button
+              <BacklinkItem
                 key={bl.fileId}
-                type="button"
-                className="flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors hover:bg-obs-interactive-hover"
+                fileName={bl.fileName}
+                context={bl.context}
                 onClick={() => openFile(bl.fileId)}
-              >
-                <span className="text-[13px] font-medium text-obs-text">{bl.fileName}</span>
-                <span className="truncate text-[12px] text-obs-text-faint">{bl.context}</span>
-              </button>
+              />
             ))}
             {activeFile && backlinks.length === 0 && (
               <p className="px-3 py-4 text-[13px] text-obs-text-faint">

@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -32,6 +32,13 @@ import { cn } from "@/lib/utils";
 import { markdownToHtml } from "@/lib/vault/link-parser";
 import { htmlToMarkdown } from "@/lib/vault/html-to-markdown";
 import { useVaultStore } from "@/lib/vault/vault-store";
+import { SlashCommandMenu } from "./SlashCommandMenu";
+import {
+  applyTiptapSlashCommand,
+  detectSlashQuery,
+  filterSlashCommands,
+  type SlashCommand,
+} from "@/lib/editor/slash-commands";
 
 interface WysiwygEditorProps {
   fileId: string;
@@ -73,6 +80,19 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
   const scrollToHeadingId = useVaultStore((s) => s.scrollToHeadingId);
   const clearScrollToHeading = useVaultStore((s) => s.clearScrollToHeading);
 
+  const [slashOpen, setSlashOpen] = useState(false);
+  const [slashQuery, setSlashQuery] = useState("");
+  const [slashIndex, setSlashIndex] = useState(0);
+
+  const slashStateRef = useRef({
+    open: false,
+    index: 0,
+    commands: [] as SlashCommand[],
+    apply: (_: SlashCommand) => {},
+  });
+
+  const slashCommands = filterSlashCommands(slashQuery);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -80,7 +100,7 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
       }),
       Underline,
       Link.configure({ openOnClick: false }),
-      Placeholder.configure({ placeholder: "Start writing..." }),
+      Placeholder.configure({ placeholder: "Start writing... (type / for commands)" }),
       TaskList,
       TaskItem.configure({ nested: true }),
     ],
@@ -100,11 +120,73 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
         }
         return false;
       },
+      handleKeyDown: (_view, event) => {
+        const { open, index, commands, apply } = slashStateRef.current;
+        if (!open || commands.length === 0) return false;
+
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          setSlashIndex((i) => Math.min(i + 1, commands.length - 1));
+          return true;
+        }
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          setSlashIndex((i) => Math.max(i - 1, 0));
+          return true;
+        }
+        if (event.key === "Enter") {
+          event.preventDefault();
+          apply(commands[index]);
+          return true;
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setSlashOpen(false);
+          setSlashQuery("");
+          return true;
+        }
+        return false;
+      },
     },
     onUpdate: ({ editor: ed }) => {
       updateContent(fileId, htmlToMarkdown(ed.getHTML()));
+
+      const { from } = ed.state.selection;
+      const textBefore = ed.state.doc.textBetween(Math.max(0, from - 50), from);
+      const query = detectSlashQuery(textBefore);
+      if (query !== null) {
+        setSlashOpen(true);
+        setSlashQuery(query);
+      } else {
+        setSlashOpen(false);
+        setSlashQuery("");
+      }
     },
   });
+
+  const applySlash = useCallback(
+    (cmd: SlashCommand) => {
+      if (!editor) return;
+      applyTiptapSlashCommand(editor, cmd);
+      setSlashOpen(false);
+      setSlashQuery("");
+      setSlashIndex(0);
+    },
+    [editor]
+  );
+
+  useEffect(() => {
+    slashStateRef.current = {
+      open: slashOpen,
+      index: slashIndex,
+      commands: slashCommands,
+      apply: applySlash,
+    };
+  }, [slashOpen, slashIndex, slashCommands, applySlash]);
+
+  useEffect(() => {
+    setSlashIndex(0);
+  }, [slashQuery]);
 
   useEffect(() => {
     if (editor && content !== htmlToMarkdown(editor.getHTML())) {
@@ -232,7 +314,15 @@ export function WysiwygEditor({ fileId, content, hideToolbar = false }: WysiwygE
       </div>
       )}
 
-      <div className="flex-1 overflow-y-auto bg-obs-bg">
+      <div className="relative flex-1 overflow-y-auto bg-obs-bg">
+        {slashOpen && slashCommands.length > 0 && (
+          <SlashCommandMenu
+            commands={slashCommands}
+            selectedIndex={slashIndex}
+            onSelect={applySlash}
+            onHover={setSlashIndex}
+          />
+        )}
         <EditorContent editor={editor} className="h-full" />
       </div>
     </div>

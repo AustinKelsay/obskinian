@@ -5,10 +5,11 @@
 
 "use client";
 
-import { Eye, Code, Columns2, Rows2, X } from "lucide-react";
+import { Eye, Code, Columns2, Rows2, X, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { EditorMode } from "@/lib/vault/types";
 import { useVaultStore } from "@/lib/vault/vault-store";
+import { downloadNoteAsHtml } from "@/lib/export";
 import { WysiwygEditor } from "./WysiwygEditor";
 import { SourceEditor } from "./SourceEditor";
 
@@ -72,6 +73,18 @@ export function NoteEditor({ paneId, fileId, content, isActive }: NoteEditorProp
         </button>
 
         <div className="flex-1" />
+
+        <button
+          type="button"
+          title="Export as HTML"
+          onClick={() => downloadNoteAsHtml(
+            useVaultStore.getState().getPaneFile(paneId)?.path ?? `${fileId}.md`,
+            content
+          )}
+          className="flex h-6 w-6 items-center justify-center rounded text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
+        >
+          <Download size={13} />
+        </button>
 
         {splitDirection === "none" && (
           <>

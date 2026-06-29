@@ -6,7 +6,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Puzzle, Calendar, Clock, Palette, Sun, Moon } from "lucide-react";
+import { Puzzle, Calendar, Clock, Palette, Sun, Moon, Code2, Layout } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   loadPreferences,
@@ -115,6 +115,40 @@ export function SettingsPanel() {
             <span className="text-[13px] text-obs-text-muted">Show recent files</span>
             <Toggle checked={prefs.showRecentInPalette} onChange={(v) => update({ showRecentInPalette: v })} />
           </label>
+        </section>
+
+        <section className="border-b border-obs-border p-3">
+          <div className="mb-3 flex items-center gap-2 text-[12px] font-medium text-obs-text">
+            <Layout size={14} className="text-obs-accent" />
+            Workspace
+          </div>
+          <label className="flex cursor-pointer items-center justify-between py-1">
+            <span className="text-[13px] text-obs-text-muted">Restore layout on load</span>
+            <Toggle
+              checked={prefs.restoreWorkspaceOnLoad}
+              onChange={(v) => update({ restoreWorkspaceOnLoad: v })}
+            />
+          </label>
+          <p className="mt-1 text-[11px] text-obs-text-faint">
+            Saves open tabs and sidebar state between sessions.
+          </p>
+        </section>
+
+        <section className="border-b border-obs-border p-3">
+          <div className="mb-3 flex items-center gap-2 text-[12px] font-medium text-obs-text">
+            <Code2 size={14} className="text-obs-accent" />
+            Custom CSS
+          </div>
+          <textarea
+            value={prefs.customCss}
+            onChange={(e) => update({ customCss: e.target.value })}
+            placeholder={".markdown-preview-view {\n  font-size: 16px;\n}"}
+            spellCheck={false}
+            className="h-[120px] w-full resize-y rounded-md border border-obs-border bg-obs-interactive px-2 py-1.5 font-mono text-[12px] text-obs-text outline-none focus:border-obs-accent"
+          />
+          <p className="mt-1 text-[11px] text-obs-text-faint">
+            CSS injected into the app. Use for personal styling tweaks.
+          </p>
         </section>
 
         <section className="p-3">

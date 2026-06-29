@@ -56,6 +56,14 @@ A **skin-deep front-end clone** of [Obsidian](https://obsidian.md) — built as 
 - **Tab pinning** — pin icon on tabs
 - **Clickable tags** — click to search by tag
 
+### Phase 6
+- **Path fuzzy search** — command palette matches file paths (e.g. `Daily/` finds daily notes)
+- **Backlink preview** — hover backlinks in right sidebar for context tooltip
+- **Slash commands** — type `/` in editor for headings, lists, todos, quotes, etc.
+- **Workspace persistence** — saves/restores tabs and sidebar layout between sessions
+- **Custom CSS snippets** — inject personal CSS from Settings
+- **Export as HTML** — download active note as styled HTML (toolbar or command palette)
+
 ## Getting Started
 
 ```bash

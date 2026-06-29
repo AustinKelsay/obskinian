@@ -19,21 +19,33 @@ import {
   FolderPlus,
   LayoutTemplate,
   Settings,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fuzzySort } from "@/lib/fuzzy-match";
+import { fuzzyMatch, fuzzySort } from "@/lib/fuzzy-match";
 import { loadPreferences } from "@/lib/preferences";
 import { openDailyNote } from "@/lib/plugins/daily-notes";
 import { pluginRegistry } from "@/lib/plugins/registry";
 import { useVaultStore } from "@/lib/vault/vault-store";
 import { getFileDisplayName } from "@/lib/utils";
+import { downloadNoteAsHtml } from "@/lib/export";
+import type { VaultFile } from "@/lib/vault/types";
 
 interface PaletteItem {
   id: string;
   label: string;
+  subtitle?: string;
   group: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
   action: () => void;
+}
+
+/** Scores a vault file against a query using name and path */
+function scoreFileMatch(file: VaultFile, query: string): number {
+  return Math.max(
+    fuzzyMatch(query, getFileDisplayName(file.path)),
+    fuzzyMatch(query, file.path)
+  );
 }
 
 /** Modal command palette overlay */
@@ -85,13 +97,22 @@ export function CommandPalette() {
         action: () => setPaneEditorMode(activePaneId, activePane?.editorMode === "source" ? "live" : "source"),
       },
       ...(activeFile
-        ? [{
-            id: "delete-note",
-            label: `Delete "${activeFile.name.replace(".md", "")}"`,
-            group: "Notes",
-            icon: Trash2,
-            action: () => useVaultStore.getState().deleteFile(activeFile.id),
-          }]
+        ? [
+            {
+              id: "export-html",
+              label: "Export note as HTML",
+              group: "Notes",
+              icon: Download,
+              action: () => downloadNoteAsHtml(activeFile.path, activeFile.content),
+            },
+            {
+              id: "delete-note",
+              label: `Delete "${activeFile.name.replace(".md", "")}"`,
+              group: "Notes",
+              icon: Trash2,
+              action: () => useVaultStore.getState().deleteFile(activeFile.id),
+            },
+          ]
         : []),
     ],
     [activeFile, activePane, activePaneId, createNote, createFolder, setLeftPanel, setViewMode, splitPane, setPaneEditorMode, setTemplatePickerOpen]
@@ -114,16 +135,24 @@ export function CommandPalette() {
 
   const fileItems: PaletteItem[] = useMemo(() => {
     const matched = query.trim()
-      ? fuzzySort(files, query, (f) => getFileDisplayName(f.path))
+      ? [...files]
+          .map((f) => ({ file: f, score: scoreFileMatch(f, query) }))
+          .filter(({ score }) => score > 0)
+          .sort((a, b) => b.score - a.score)
+          .map(({ file }) => file)
       : files;
 
-    return matched.slice(0, 10).map((f) => ({
-      id: `file-${f.id}`,
-      label: getFileDisplayName(f.path),
-      group: "Notes",
-      icon: FileText,
-      action: () => openFile(f.id),
-    }));
+    return matched.slice(0, 10).map((f) => {
+      const folderPath = f.path.includes("/") ? f.path.replace(/\/[^/]+$/, "") : "";
+      return {
+        id: `file-${f.id}`,
+        label: getFileDisplayName(f.path),
+        subtitle: folderPath || undefined,
+        group: "Notes",
+        icon: FileText,
+        action: () => openFile(f.id),
+      };
+    });
   }, [files, query, openFile]);
 
   const filteredCommands = useMemo(
@@ -248,7 +277,12 @@ export function CommandPalette() {
                   onMouseEnter={() => setSelectedIndex(index)}
                 >
                   <Icon size={15} className="shrink-0 text-obs-text-faint" />
-                  <span className="flex-1 truncate text-[13px]">{item.label}</span>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-[13px]">{item.label}</span>
+                    {item.subtitle && (
+                      <span className="truncate text-[11px] text-obs-text-faint">{item.subtitle}</span>
+                    )}
+                  </div>
                 </button>
               </div>
             );

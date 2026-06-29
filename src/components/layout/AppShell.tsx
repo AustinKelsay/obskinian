@@ -19,12 +19,12 @@ import { GraphView } from "@/components/graph/GraphView";
 import { EditorArea } from "@/components/editor/EditorArea";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { TemplatePicker } from "@/components/templates/TemplatePicker";
-import { useVaultStore, initializeVault } from "@/lib/vault/vault-store";
+import { useVaultStore, initializeVault, subscribeWorkspacePersistence } from "@/lib/vault/vault-store";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { registerBuiltinPlugins } from "@/lib/plugins/registry";
 import { openDailyNote } from "@/lib/plugins/daily-notes";
-import { loadPreferences } from "@/lib/preferences";
+import { loadPreferences, applyCustomCss } from "@/lib/preferences";
 import { applyTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
@@ -57,8 +57,11 @@ export function AppShell() {
   useEffect(() => {
     const prefs = loadPreferences();
     applyTheme({ mode: prefs.theme, accent: prefs.accent });
+    applyCustomCss(prefs.customCss);
     registerBuiltinPlugins();
     initializeVault();
+    const unsubscribe = subscribeWorkspacePersistence();
+    return () => unsubscribe();
   }, []);
 
   const shortcuts = useMemo(
