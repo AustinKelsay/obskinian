@@ -12,7 +12,7 @@ import { useVaultStore } from "@/lib/vault/vault-store";
 import { extractHeadings, extractTags, findBacklinks } from "@/lib/vault/link-parser";
 
 /** Right sidebar with tabbed panels */
-export function RightSidebar() {
+export function RightSidebar({ className }: { className?: string }) {
   const {
     rightPanel,
     setRightPanel,
@@ -44,7 +44,7 @@ export function RightSidebar() {
   if (!isRightSidebarOpen) return null;
 
   return (
-    <div className="flex h-full w-[260px] shrink-0 flex-col border-l border-obs-border bg-obs-sidebar">
+    <div className={cn("flex h-full w-[260px] shrink-0 flex-col border-l border-obs-border bg-obs-sidebar", className)}>
       <div className="flex h-[36px] shrink-0 items-center justify-between border-b border-obs-border px-2">
         <div className="flex items-center gap-0.5">
           {panels.map((panel) => (

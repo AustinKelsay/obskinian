@@ -17,6 +17,7 @@ import {
   Calendar,
   Clock,
   FolderPlus,
+  LayoutTemplate,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,7 @@ export function CommandPalette() {
     setPaneEditorMode,
     getActiveFile,
     recentFileIds,
+    setTemplatePickerOpen,
   } = useVaultStore();
 
   const [query, setQuery] = useState("");
@@ -66,6 +68,7 @@ export function CommandPalette() {
   const commands: PaletteItem[] = useMemo(
     () => [
       { id: "new-note", label: "Create new note", group: "Notes", icon: Plus, action: () => createNote() },
+      { id: "template", label: "Insert template", group: "Notes", icon: LayoutTemplate, action: () => setTemplatePickerOpen(true) },
       { id: "new-folder", label: "Create new folder", group: "Notes", icon: FolderPlus, action: () => createFolder() },
       { id: "daily-note", label: "Open today's daily note", group: "Notes", icon: Calendar, action: () => openDailyNote() },
       { id: "graph", label: "Open graph view", group: "Views", icon: Share2, action: () => { setLeftPanel("graph"); setViewMode("graph"); } },
@@ -91,7 +94,7 @@ export function CommandPalette() {
           }]
         : []),
     ],
-    [activeFile, activePane, activePaneId, createNote, createFolder, setLeftPanel, setViewMode, splitPane, setPaneEditorMode]
+    [activeFile, activePane, activePaneId, createNote, createFolder, setLeftPanel, setViewMode, splitPane, setPaneEditorMode, setTemplatePickerOpen]
   );
 
   const recentItems: PaletteItem[] = useMemo(() => {

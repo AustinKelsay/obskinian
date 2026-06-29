@@ -18,12 +18,15 @@ import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import { GraphView } from "@/components/graph/GraphView";
 import { EditorArea } from "@/components/editor/EditorArea";
 import { CommandPalette } from "@/components/command/CommandPalette";
+import { TemplatePicker } from "@/components/templates/TemplatePicker";
 import { useVaultStore, initializeVault } from "@/lib/vault/vault-store";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { registerBuiltinPlugins } from "@/lib/plugins/registry";
 import { openDailyNote } from "@/lib/plugins/daily-notes";
 import { loadPreferences } from "@/lib/preferences";
 import { applyTheme } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 
 /** Root layout shell matching Obsidian's workspace structure */
 export function AppShell() {
@@ -48,6 +51,7 @@ export function AppShell() {
     setPaneEditorMode,
   } = useVaultStore();
 
+  const isMobile = useIsMobile();
   const hasPaneContent = panes.some((p) => getPaneFile(p.id) !== null);
 
   useEffect(() => {
@@ -93,19 +97,36 @@ export function AppShell() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-obs-bg">
       <CommandPalette />
+      <TemplatePicker />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="relative flex flex-1 overflow-hidden">
         <Ribbon />
 
+        {isMobile && (isLeftSidebarOpen || isRightSidebarOpen) && (
+          <div
+            className="absolute inset-0 z-20 bg-black/50 md:hidden"
+            onClick={() => {
+              if (isLeftSidebarOpen) toggleLeftSidebar();
+              if (isRightSidebarOpen) toggleRightSidebar();
+            }}
+          />
+        )}
+
         {isLeftSidebarOpen && leftPanel !== "graph" && (
-          <ResizablePanel side="left" className="border-r border-obs-border bg-obs-sidebar">
+          <ResizablePanel
+            side="left"
+            className={cn(
+              "z-30 border-r border-obs-border bg-obs-sidebar",
+              isMobile && "absolute inset-y-0 left-[44px] shadow-xl"
+            )}
+          >
             {leftPanel === "explorer" && <FileExplorer />}
             {leftPanel === "search" && <SearchPanel />}
             {leftPanel === "settings" && <SettingsPanel />}
           </ResizablePanel>
         )}
 
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <div className="flex h-[36px] shrink-0 items-center border-b border-obs-border bg-obs-bg-secondary">
             <button
               type="button"
@@ -142,7 +163,7 @@ export function AppShell() {
           </div>
         </div>
 
-        <RightSidebar />
+        <RightSidebar className={isMobile ? "absolute inset-y-0 right-0 z-30 shadow-xl" : undefined} />
       </div>
 
       <StatusBar />

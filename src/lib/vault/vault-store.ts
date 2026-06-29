@@ -33,6 +33,8 @@ import {
   updateFileContent,
 } from "./vault-data";
 import { extractWikiLinks } from "./link-parser";
+import { filterGraphByMode, filterGraphByText } from "./graph-utils";
+import { processTemplateContent } from "./templates";
 import { getFileDisplayName, pathToId } from "../utils";
 import { pluginRegistry } from "../plugins/registry";
 const RECENT_KEY = "obskinian-recent-files";
@@ -73,7 +75,10 @@ interface VaultStore {
   searchQuery: string;
   searchResults: SearchResult[];
   graphFilter: string;
+  graphDisplayFilter: import("./graph-utils").GraphDisplayFilter;
   isCommandPaletteOpen: boolean;
+  isTemplatePickerOpen: boolean;
+  templateTargetFolder: string | null;
   recentFileIds: string[];
   scrollToHeadingId: string | null;
   dragItemId: string | null;
@@ -84,8 +89,10 @@ interface VaultStore {
   closeTab: (tabId: string) => void;
   setActiveTab: (tabId: string) => void;
   pinTab: (tabId: string) => void;
+  reorderTabs: (dragTabId: string, targetTabId: string) => void;
   updateContent: (fileId: string, content: string) => void;
   createNote: (folderPath?: string) => Promise<void>;
+  createNoteFromTemplate: (templateFileId: string, folderPath?: string) => Promise<void>;
   createFolder: (parentPath?: string) => Promise<void>;
   deleteFile: (fileId: string) => Promise<void>;
   renameNode: (nodeId: string, newName: string) => Promise<void>;
@@ -99,7 +106,9 @@ interface VaultStore {
   setViewMode: (mode: ViewMode) => void;
   setSearchQuery: (query: string) => void;
   setGraphFilter: (filter: string) => void;
+  setGraphDisplayFilter: (filter: import("./graph-utils").GraphDisplayFilter) => void;
   setCommandPaletteOpen: (open: boolean) => void;
+  setTemplatePickerOpen: (open: boolean, targetFolder?: string | null) => void;
   scrollToHeading: (headingId: string) => void;
   clearScrollToHeading: () => void;
   setDragItemId: (id: string | null) => void;
@@ -142,7 +151,10 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   searchQuery: "",
   searchResults: [],
   graphFilter: "",
+  graphDisplayFilter: "all",
   isCommandPaletteOpen: false,
+  isTemplatePickerOpen: false,
+  templateTargetFolder: null,
   recentFileIds: [],
   scrollToHeadingId: null,
   dragItemId: null,
@@ -235,11 +247,40 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   },
 
   pinTab: (tabId: string) => {
-    set((state) => ({
-      tabs: state.tabs.map((t) =>
-        t.id === tabId ? { ...t, isPinned: !t.isPinned } : t
-      ),
-    }));
+    set((state) => {
+      const tabs = [...state.tabs];
+      const idx = tabs.findIndex((t) => t.id === tabId);
+      if (idx === -1) return state;
+
+      const tab = { ...tabs[idx], isPinned: !tabs[idx].isPinned };
+      tabs.splice(idx, 1);
+
+      if (tab.isPinned) {
+        tabs.unshift(tab);
+      } else {
+        const lastPinned = tabs.findLastIndex((t) => t.isPinned);
+        tabs.splice(lastPinned + 1, 0, tab);
+      }
+
+      return { tabs };
+    });
+  },
+
+  reorderTabs: (dragTabId: string, targetTabId: string) => {
+    if (dragTabId === targetTabId) return;
+
+    set((state) => {
+      const tabs = [...state.tabs];
+      const fromIdx = tabs.findIndex((t) => t.id === dragTabId);
+      const toIdx = tabs.findIndex((t) => t.id === targetTabId);
+      if (fromIdx === -1 || toIdx === -1) return state;
+
+      if (tabs[fromIdx].isPinned !== tabs[toIdx].isPinned) return state;
+
+      const [moved] = tabs.splice(fromIdx, 1);
+      tabs.splice(toIdx, 0, moved);
+      return { tabs };
+    });
   },
 
   updateContent: (fileId: string, content: string) => {
@@ -289,6 +330,51 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
     }
   },
 
+  createNoteFromTemplate: async (templateFileId: string, folderPath?: string) => {
+    const template = findFileById(get().vault, templateFileId);
+    if (!template) return;
+
+    const files = get().getAllFiles();
+    const baseName = getFileDisplayName(template.path);
+    let noteName = `${baseName}.md`;
+    let n = 1;
+    const paths = new Set(files.map((f) => f.path));
+    while (paths.has(folderPath ? `${folderPath}/${noteName}` : noteName)) {
+      n += 1;
+      noteName = `${baseName} ${n}.md`;
+    }
+
+    const filePath = folderPath ? `${folderPath}/${noteName}` : noteName;
+    const title = noteName.replace(/\.md$/, "");
+    const content = processTemplateContent(template.content, title);
+
+    try {
+      const res = await fetch("/api/vault", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create", path: filePath, content, type: "file" }),
+      });
+      const data = await res.json();
+      if (data.file) {
+        set((state) => ({ vault: addFileToTree(state.vault, data.file) }));
+        get().openFile(data.file.id);
+        pluginRegistry.fireHook("onFileCreate", filePath);
+      }
+    } catch {
+      const file: VaultFile = {
+        id: pathToId(filePath),
+        name: noteName,
+        type: "file",
+        path: filePath,
+        content,
+        createdAt: new Date().toISOString(),
+        modifiedAt: new Date().toISOString(),
+      };
+      set((state) => ({ vault: addFileToTree(state.vault, file) }));
+      get().openFile(file.id);
+    }
+  },
+
   createFolder: async (parentPath?: string) => {
     const folderName = generateUntitledFolderPath(get().vault);
     const folderPath = parentPath ? `${parentPath}/${folderName}` : folderName;
@@ -309,24 +395,32 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   },
 
   deleteFile: async (fileId: string) => {
-    const file = findFileById(get().vault, fileId);
-    if (!file) return;
+    const node = findNodeById(get().vault, fileId);
+    if (!node) return;
 
     try {
-      await fetch(`/api/vault?path=${encodeURIComponent(file.path)}`, { method: "DELETE" });
+      await fetch(`/api/vault?path=${encodeURIComponent(node.path)}`, { method: "DELETE" });
     } catch {
       /* continue with local delete */
     }
 
     const { tabs, panes } = get();
-    const tab = tabs.find((t) => t.fileId === fileId);
-    if (tab) get().closeTab(tab.id);
+    if (node.type === "file") {
+      const tab = tabs.find((t) => t.fileId === fileId);
+      if (tab) get().closeTab(tab.id);
+    }
 
     set((state) => ({
       vault: removeNodeFromTree(state.vault, fileId) as VaultFolder,
-      panes: panes.map((p) => (p.fileId === fileId ? { ...p, fileId: null } : p)),
+      panes:
+        node.type === "file"
+          ? panes.map((p) => (p.fileId === fileId ? { ...p, fileId: null } : p))
+          : panes,
     }));
-    pluginRegistry.fireHook("onFileDelete", file.path);
+
+    if (node.type === "file") {
+      pluginRegistry.fireHook("onFileDelete", node.path);
+    }
   },
 
   renameNode: async (nodeId: string, newName: string) => {
@@ -479,7 +573,10 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   },
 
   setGraphFilter: (filter: string) => set({ graphFilter: filter }),
+  setGraphDisplayFilter: (filter) => set({ graphDisplayFilter: filter }),
   setCommandPaletteOpen: (open: boolean) => set({ isCommandPaletteOpen: open }),
+  setTemplatePickerOpen: (open, targetFolder = null) =>
+    set({ isTemplatePickerOpen: open, templateTargetFolder: targetFolder }),
   scrollToHeading: (headingId: string) => set({ scrollToHeadingId: headingId }),
   clearScrollToHeading: () => set({ scrollToHeadingId: null }),
   setDragItemId: (id: string | null) => set({ dragItemId: id }),
@@ -568,7 +665,11 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
       }
     }
 
-    return { nodes, links };
+    const { graphDisplayFilter, graphFilter } = get();
+    const activeFile = get().getActiveFile();
+    let filtered = filterGraphByMode(nodes, links, graphDisplayFilter, activeFile?.id ?? null);
+    filtered = filterGraphByText(filtered.nodes, filtered.links, graphFilter);
+    return filtered;
   },
 }));
 

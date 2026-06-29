@@ -38,7 +38,12 @@ A **skin-deep front-end clone** of [Obsidian](https://obsidian.md) — built as 
 | `⌘⇧F` / `Ctrl+Shift+F` | Open search |
 | `⌘D` / `Ctrl+D` | Open today's daily note (via command palette) |
 
-### Phase 4
+### Phase 5
+- **Tab drag-and-drop** — reorder open tabs (pinned/unpinned groups)
+- **Context menus** — right-click files/folders in explorer
+- **Note templates** — create notes from Templates/ with placeholder substitution
+- **Graph filters** — All, Local (1-hop), Orphans display modes
+- **Mobile layout** — sidebars as overlays on narrow viewports
 - **Light/dark themes** with 5 accent color options (Settings → Appearance)
 - **Inline rename** — double-click or pencil icon on files/folders
 - **Drag-and-drop** — drag notes onto folders to move them

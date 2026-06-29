@@ -1,16 +1,26 @@
 /**
- * Recursive file tree item for the vault explorer sidebar.
- * Supports rename, delete, and drag-and-drop file moves.
+ * Recursive file tree item with context menu, rename, delete, and drag-drop.
  */
 
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronRight, FileText, Folder, FolderOpen, Pencil, Trash2 } from "lucide-react";
+import {
+  ChevronRight,
+  FileText,
+  Folder,
+  FolderOpen,
+  FolderPlus,
+  LayoutTemplate,
+  Pencil,
+  Trash2,
+  FilePlus,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { VaultNode } from "@/lib/vault/types";
 import { useVaultStore } from "@/lib/vault/vault-store";
 import { getFileDisplayName } from "@/lib/utils";
+import { ContextMenu, type ContextMenuItem } from "@/components/ui/ContextMenu";
 
 interface FileTreeItemProps {
   node: VaultNode;
@@ -29,12 +39,16 @@ export function FileTreeItem({ node, depth = 0 }: FileTreeItemProps) {
     moveFile,
     setDragItemId,
     dragItemId,
+    createNote,
+    createFolder,
+    setTemplatePickerOpen,
   } = useVaultStore();
 
   const [hovered, setHovered] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
   const [dropTarget, setDropTarget] = useState(false);
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
@@ -54,14 +68,86 @@ export function FileTreeItem({ node, depth = 0 }: FileTreeItemProps) {
     }
   }
 
+  function openContextMenu(e: React.MouseEvent) {
+    e.preventDefault();
+    setMenu({ x: e.clientX, y: e.clientY });
+  }
+
+  const menuItems: ContextMenuItem[] =
+    node.type === "folder"
+      ? [
+          {
+            id: "new-note",
+            label: "New note",
+            icon: <FilePlus size={14} />,
+            action: () => createNote(node.path),
+          },
+          {
+            id: "template",
+            label: "Insert template",
+            icon: <LayoutTemplate size={14} />,
+            action: () => setTemplatePickerOpen(true, node.path),
+          },
+          {
+            id: "new-folder",
+            label: "New folder",
+            icon: <FolderPlus size={14} />,
+            action: () => createFolder(node.path),
+          },
+          {
+            id: "rename",
+            label: "Rename",
+            icon: <Pencil size={14} />,
+            action: startRename,
+          },
+          {
+            id: "delete",
+            label: "Delete folder",
+            icon: <Trash2 size={14} />,
+            destructive: true,
+            action: () => {
+              if (window.confirm(`Delete folder "${node.name}" and all contents?`)) {
+                deleteFile(node.id);
+              }
+            },
+          },
+        ]
+      : [
+          {
+            id: "open",
+            label: "Open",
+            icon: <FileText size={14} />,
+            action: () => openFile(node.id),
+          },
+          {
+            id: "rename",
+            label: "Rename",
+            icon: <Pencil size={14} />,
+            action: startRename,
+          },
+          {
+            id: "delete",
+            label: "Delete",
+            icon: <Trash2 size={14} />,
+            destructive: true,
+            action: () => {
+              if (window.confirm(`Delete "${displayName}"?`)) deleteFile(node.id);
+            },
+          },
+        ];
+
   if (node.type === "folder") {
     return (
       <div>
+        {menu && (
+          <ContextMenu items={menuItems} x={menu.x} y={menu.y} onClose={() => setMenu(null)} />
+        )}
         <div
           className={cn(
             "flex items-center",
             dropTarget && "rounded-sm bg-obs-accent/15 ring-1 ring-obs-accent/40"
           )}
+          onContextMenu={openContextMenu}
           onDragOver={(e) => {
             if (!dragItemId) return;
             e.preventDefault();
@@ -126,9 +212,13 @@ export function FileTreeItem({ node, depth = 0 }: FileTreeItemProps) {
       draggable={!renaming}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onContextMenu={openContextMenu}
       onDragStart={() => setDragItemId(node.id)}
       onDragEnd={() => setDragItemId(null)}
     >
+      {menu && (
+        <ContextMenu items={menuItems} x={menu.x} y={menu.y} onClose={() => setMenu(null)} />
+      )}
       {renaming ? (
         <input
           ref={inputRef}
