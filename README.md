@@ -115,6 +115,31 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) — Welcome.md opens automatically.
 
+## Smoke test deploy
+
+### Option A — Render (free public URL, ~5 min)
+
+1. Push this repo to GitHub (already on `main`).
+2. Open **[Deploy to Render](https://render.com/deploy?repo=https://github.com/AustinKelsay/obskinian)** (or Dashboard → New → Blueprint → select repo).
+3. Confirm the `obskinian` web service from `render.yaml` and click **Apply**.
+4. Wait for the build (~3–5 min). Render gives you a URL like `https://obskinian.onrender.com`.
+
+> **Note:** Free tier sleeps after ~15 min idle; first load after sleep takes ~30s. Vault edits persist until the instance restarts or redeploys — fine for smoke testing.
+
+### Option B — Docker (local browser)
+
+```bash
+docker compose up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+### Option C — Vercel (fastest, read-mostly demo)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/AustinKelsay/obskinian)
+
+Import the repo and deploy with defaults. Browsing, search, graph, and reading all work. **File writes may not persist** on Vercel’s read-only serverless filesystem — use Render or Docker for full vault editing.
+
 ## Project Structure
 
 ```

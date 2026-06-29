@@ -1,0 +1,14 @@
+# Render Blueprint — one-click deploy for smoke testing Obskinian.
+# Connect repo at https://dashboard.render.com/select-repo?type=blueprint
+services:
+  - type: web
+    name: obskinian
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22.12.0"

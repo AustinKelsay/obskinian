@@ -1,0 +1,11 @@
+# Local smoke test: docker compose up --build
+# Then open http://localhost:3000
+services:
+  obskinian:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
