@@ -5,13 +5,14 @@
 
 "use client";
 
-import { FolderPlus, FilePlus, ChevronsDownUp } from "lucide-react";
+import { FolderPlus, FilePlus, ChevronsDownUp, LayoutTemplate } from "lucide-react";
 import { useVaultStore } from "@/lib/vault/vault-store";
 import { FileTreeItem } from "./FileTreeItem";
 
 /** Left sidebar file explorer panel */
 export function FileExplorer() {
-  const { vault, createNote, createFolder, collapseAllFolders } = useVaultStore();
+  const { vault, createNote, createFolder, collapseAllFolders, setTemplatePickerOpen } =
+    useVaultStore();
 
   return (
     <div className="flex h-full flex-col">
@@ -28,6 +29,15 @@ export function FileExplorer() {
             className="flex h-6 w-6 items-center justify-center rounded text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
           >
             <FilePlus size={14} />
+          </button>
+          <button
+            type="button"
+            title="Insert template"
+            aria-label="Insert template"
+            onClick={() => setTemplatePickerOpen(true)}
+            className="flex h-6 w-6 items-center justify-center rounded text-obs-text-muted hover:bg-obs-interactive-hover hover:text-obs-text"
+          >
+            <LayoutTemplate size={14} />
           </button>
           <button
             type="button"

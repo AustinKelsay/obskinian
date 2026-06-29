@@ -1,41 +1,57 @@
 /**
- * Tab bar for open note tabs, matching Obsidian's tabbed interface.
- * Supports tab switching, closing, pinning, and active state styling.
+ * Tab bar for open note tabs with drag-and-drop reordering.
  */
 
 "use client";
 
+import { useState } from "react";
 import { X, Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useVaultStore } from "@/lib/vault/vault-store";
 
 /** Horizontal tab bar showing all open notes */
 export function TabBar() {
-  const { tabs, activeTabId, setActiveTab, closeTab, pinTab } = useVaultStore();
-
-  const sortedTabs = [...tabs].sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    return 0;
-  });
+  const { tabs, activeTabId, setActiveTab, closeTab, pinTab, reorderTabs } = useVaultStore();
+  const [dragTabId, setDragTabId] = useState<string | null>(null);
+  const [dropTabId, setDropTabId] = useState<string | null>(null);
 
   if (tabs.length === 0) return null;
 
   return (
     <div className="flex h-[36px] shrink-0 flex-1 items-end overflow-x-auto">
-      {sortedTabs.map((tab) => {
+      {tabs.map((tab) => {
         const isActive = tab.id === activeTabId;
+        const isDropTarget = dropTabId === tab.id && dragTabId !== tab.id;
+
         return (
           <div
             key={tab.id}
+            draggable
             className={cn(
               "group relative flex h-[34px] max-w-[200px] shrink-0 cursor-pointer items-center gap-1.5 border-r border-obs-border px-3 text-[13px] transition-colors",
               isActive
                 ? "bg-obs-bg text-obs-text"
                 : "bg-obs-bg-secondary text-obs-text-muted hover:bg-obs-interactive hover:text-obs-text",
-              tab.isPinned && "border-l-2 border-l-obs-accent/50"
+              tab.isPinned && "border-l-2 border-l-obs-accent/50",
+              isDropTarget && "bg-obs-accent/10 ring-1 ring-inset ring-obs-accent/40"
             )}
             onClick={() => setActiveTab(tab.id)}
+            onDragStart={() => setDragTabId(tab.id)}
+            onDragEnd={() => {
+              setDragTabId(null);
+              setDropTabId(null);
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDropTabId(tab.id);
+            }}
+            onDragLeave={() => setDropTabId(null)}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragTabId) reorderTabs(dragTabId, tab.id);
+              setDragTabId(null);
+              setDropTabId(null);
+            }}
             role="tab"
             aria-selected={isActive}
           >
